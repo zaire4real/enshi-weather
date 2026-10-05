@@ -641,7 +641,7 @@
         {type:'value',name:'°C',nameTextStyle:{fontSize:11},axisLabel:{fontSize:11},splitLine:{show:false}}
       ],
       series:[
-        {name:(isTW?'降水量':'降水量'),type:'bar',yAxisIndex:0,data:rains,barWidth:12,itemStyle:{color:'rgba(79,143,201,0.6)',borderColor:'#3b82c4',borderWidth:1},markPoint:{data:[{type:'max',name:isTW?'最大降水':'最大降水',label:{fontSize:10,color:'#fff',formatter:function(p){return '最大降水 '+p.value+' mm';}},itemStyle:{color:'#d06b4a'}}]}},
+        {name:(isTW?'降水量':'降水量'),type:'bar',yAxisIndex:0,data:rains,barWidth:12,itemStyle:{color:'rgba(79,143,201,0.6)',borderColor:'#3b82c4',borderWidth:1},label:{show:true,position:'top',fontSize:9,color:'#94a3b8',formatter:function(p){return p.value>=5?p.value+'mm':'';}}},
         {name:(isTW?'最高氣溫':'最高气温'),type:'line',yAxisIndex:1,data:highs,smooth:true,lineStyle:{width:2.5,color:'#d97706'},itemStyle:{color:'#d97706'},symbolSize:6},
         {name:(isTW?'最低氣溫':'最低气温'),type:'line',yAxisIndex:1,data:lows,smooth:true,lineStyle:{width:2.5,color:'#3b82c4'},itemStyle:{color:'#3b82c4'},symbolSize:6}
       ]
