@@ -22,10 +22,10 @@
   #bgCanvas{position:fixed;inset:0;z-index:0;pointer-events:none;}
   .wrap{max-width:720px;margin:0 auto;padding:0 18px;position:relative;z-index:1;}
   .lang-switch{position:fixed;top:14px;right:14px;z-index:100;}
-  .hero{padding:48px 0 28px;text-align:center;}
+  .hero{padding:40px 0 20px;text-align:center;}
   .loc{font-size:22px;font-weight:600;color:#fff;letter-spacing:-.02em;text-shadow:0 1px 8px rgba(0,0,0,.1);}
   .loc small{display:block;font-size:13px;color:rgba(255,255,255,.8);font-weight:400;margin-top:2px;letter-spacing:0;}
-  .big-temp{font-size:96px;font-weight:200;line-height:1;letter-spacing:-.05em;color:#fff;margin:18px 0 4px;text-shadow:0 2px 16px rgba(0,0,0,.12);}
+  .big-temp{font-size:110px;font-weight:200;line-height:1;letter-spacing:-.05em;color:#fff;margin:18px 0 4px;text-shadow:0 2px 16px rgba(0,0,0,.12);}
   .big-temp sup{font-size:36px;font-weight:300;color:rgba(255,255,255,.8);vertical-align:super;}
   .cond{font-size:20px;font-weight:500;color:#fff;}
   .hi-lo{font-size:15px;color:rgba(255,255,255,.85);margin-top:6px;font-weight:400;}
@@ -36,13 +36,13 @@
     border-radius:999px;padding:3px;gap:2px;box-shadow:0 2px 12px rgba(0,0,0,.08);z-index:100;}
   .lang-btn{border:0;background:transparent;color:var(--sub);font-family:inherit;font-size:12px;font-weight:500;padding:5px 12px;border-radius:999px;cursor:pointer;}
   .lang-btn.active{background:var(--ink);color:#fff;}
-  .card{background:var(--card);border-radius:var(--r);padding:20px;margin-top:14px;box-shadow:var(--shadow);}
-  .card-title{font-size:12px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;}
+  .card{background:rgba(255,255,255,.92);backdrop-filter:blur(20px);border-radius:20px;padding:16px;margin-top:10px;box-shadow:var(--shadow);}
+  .card-title{font-size:11px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;}
   .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
   @media(min-width:520px){.grid{grid-template-columns:repeat(3,1fr);}}
-  .g{background:#f5f5f7;border-radius:var(--r-sm);padding:14px;}
+  .g{background:rgba(142,142,147,.1);border-radius:12px;padding:10px 12px;}
   .g .k{font-size:12px;color:var(--sub);font-weight:500;margin-bottom:4px;}
-  .g .v{font-size:22px;font-weight:600;color:var(--ink);letter-spacing:-.02em;}
+  .g .v{font-size:20px;font-weight:600;color:var(--ink);letter-spacing:-.02em;}
   .g .v small{font-size:12px;color:var(--sub);font-weight:400;margin-left:2px;}
   .hour-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:0 -20px;padding:0 20px;}
   .hour-scroll::-webkit-scrollbar{display:none;}
@@ -60,7 +60,7 @@
   .drow .day{flex:0 0 56px;font-weight:500;color:var(--ink);}
   .drow .ico{flex:0 0 36px;text-align:center;font-size:18px;}
   .drow .lo{flex:0 0 34px;text-align:right;color:var(--sub);font-weight:500;}
-  .drow .bar{flex:1;margin:0 12px;height:5px;border-radius:3px;background:linear-gradient(90deg,#5ac8fa,#ffcc00,#ff9500);}
+  .drow .bar{flex:1;height:4px;border-radius:2px;background:linear-gradient(90deg,#5ac8fa,#ffcc00,#ff9500);}
   .drow .hi{flex:0 0 34px;text-align:right;font-weight:600;color:var(--ink);}
   #trend{width:100%;height:320px;}
   .aqi-hero{display:flex;align-items:center;gap:18px;}
@@ -242,10 +242,15 @@
     }
     set('hourlyStrip',html||'<div style="color:#86868b;font-size:13px;padding:14px;">'+t('done')+'</div>');
     var days=['日','一','二','三','四','五','六'],wl='';
+    var allLo=Infinity, allHi=-Infinity;
+    for(var i=0;i<7;i++){allLo=Math.min(allLo,d.temperature_2m_min[i]);allHi=Math.max(allHi,d.temperature_2m_max[i]);}
+    var rng=allHi-allLo||1;
     for(var i=0;i<7;i++){
       var dt=new Date(d.time[i]+'T00:00:00Z');
       var lbl=i===0?t('today'):(curLang==='zh-TW'?'週':'周')+days[dt.getUTCDay()];
-      wl+='<div class="drow"><div class="day">'+lbl+'</div><div class="ico">'+icon(d.weather_code[i])+'</div><div class="lo">'+Math.round(d.temperature_2m_min[i])+'°</div><div class="bar"></div><div class="hi">'+Math.round(d.temperature_2m_max[i])+'°</div></div>';
+      var lo=d.temperature_2m_min[i], hi=d.temperature_2m_max[i];
+      var left=((lo-allLo)/rng)*100, right=((allHi-hi)/rng)*100;
+      wl+='<div class="drow"><div class="day">'+lbl+'</div><div class="ico">'+icon(d.weather_code[i])+'</div><div class="lo">'+Math.round(lo)+'°</div><div class="bar" style="margin-left:'+left+'%;margin-right:'+right+'%"></div><div class="hi">'+Math.round(hi)+'°</div></div>';
     }
     set('weekList',wl);
     var hi=d.temperature_2m_max[0],lo=d.temperature_2m_min[0],pr=d.precipitation_probability_max[0]||0;
