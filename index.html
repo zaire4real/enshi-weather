@@ -292,17 +292,18 @@
     else scene='clear';
     drops=[]; clouds=[]; particles=[];
     if(scene==='rain'||scene==='storm'){
-      var n = scene==='storm'?160:100;
+      var n = scene==='storm'?220:140;
       for(var i=0;i<n;i++){
-        var far = Math.random()<0.5;
+        var far = Math.random()<0.6;
         drops.push({x:Math.random()*innerWidth, y:Math.random()*innerHeight,
-          len: far?10+Math.random()*8 : 18+Math.random()*12,
-          sp: far? 6+Math.random()*4 : 12+Math.random()*8, far:far});
+          len: far?14+Math.random()*10 : 24+Math.random()*18,
+          sp: far? 8+Math.random()*5 : 16+Math.random()*10, far:far,
+          drift: (Math.random()-0.5)*0.3});
       }
     }
     if(scene==='cloud'||scene==='clear'){
-      var cn = scene==='cloud'?6:3;
-      for(var i=0;i<cn;i++) clouds.push({x:Math.random()*innerWidth, y:30+Math.random()*innerHeight*0.4, r:60+Math.random()*80, sp:0.15+Math.random()*0.2, o:0.25+Math.random()*0.2});
+      var cn = scene==='cloud'?8:4;
+      for(var i=0;i<cn;i++) clouds.push({x:Math.random()*innerWidth, y:20+Math.random()*innerHeight*0.5, r:80+Math.random()*120, sp:0.1+Math.random()*0.15, o:0.2+Math.random()*0.2});
     }
     if(scene==='snow'){
       for(var i=0;i<60;i++) particles.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:2+Math.random()*3,sp:0.5+Math.random()*0.8,sw:Math.random()*Math.PI*2});
@@ -330,24 +331,30 @@
     bctx.fill();
   }
 
+  var flash=0;
   function loop(){
     drawGrad();
+    if(scene==='storm' && flash>0){
+      bctx.fillStyle='rgba(255,255,255,'+(flash*0.6)+')';
+      bctx.fillRect(0,0,innerWidth,innerHeight);
+      flash-=0.08;
+    }
+    if(scene==='storm' && Math.random()<0.005){ flash=1; }
     if(scene==='cloud'||scene==='clear'){
       for(var i=0;i<clouds.length;i++){
-        var c=clouds[i]; c.x+=c.sp; if(c.x-c.r>innerWidth) c.x=-c.r;
+        var c=clouds[i]; c.x+=c.sp; if(c.x-c.r*2>innerWidth) c.x=-c.r*2;
         drawCloud(c);
       }
     }
     if(scene==='rain'||scene==='storm'){
-      bctx.lineWidth=1;
-      bctx.beginPath();
       for(var i=0;i<drops.length;i++){
         var d=drops[i];
-        bctx.strokeStyle=d.far?'rgba(200,215,235,0.25)':'rgba(220,232,245,0.55)';
+        bctx.strokeStyle=d.far?'rgba(210,225,240,0.18)':'rgba(230,240,250,0.45)';
+        bctx.lineWidth=d.far?0.8:1.1;
         bctx.beginPath();
-        bctx.moveTo(d.x,d.y); bctx.lineTo(d.x-1.5,d.y+d.len);
-        d.y+=d.sp; d.x-=1.2;
-        if(d.y>innerHeight){ d.y=-30; d.x=Math.random()*(innerWidth+100)-50; }
+        bctx.moveTo(d.x,d.y); bctx.lineTo(d.x+d.drift,d.y+d.len);
+        d.y+=d.sp; d.x+=d.drift;
+        if(d.y>innerHeight){ d.y=-40; d.x=Math.random()*(innerWidth+100)-50; }
       }
     }
     if(scene==='snow'){
