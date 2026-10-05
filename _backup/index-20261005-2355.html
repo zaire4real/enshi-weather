@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>恩施天氣 · 多方確認看板</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231e3a5f'/%3E%3Cpath d='M8 21a4 4 0 0 1 1-7.9 5 5 0 0 1 9.8-1.2A4.5 4.5 0 0 1 24 21h-2.5' fill='none' stroke='%23eaf2fb' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M12 24h8' stroke='%233b82c4' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+  :root{
+    --bg:#f5f5f7; --card:#ffffff; --ink:#1d1d1f; --sub:#86868b;
+    --line:rgba(0,0,0,.06); --blue:#0071e3; --blue-soft:#f0f6ff;
+    --good:#30d158; --warn:#ff9f0a; --bad:#ff453a;
+    --radius:20px; --radius-sm:14px;
+    --shadow:0 2px 12px rgba(0,0,0,.04),0 12px 40px rgba(0,0,0,.04);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,'SF Pro Display','SF Pro Text','PingFang TC','Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;letter-spacing:-.01em;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 22px 60px;}
+
+  /* ===== Hero：Apple 风格浅色系 ===== */
+  .hero{background:linear-gradient(180deg,#ffffff 0%,#f5f5f7 100%);color:var(--ink);padding:44px 0 40px;border-radius:0;}
+  .hero .wrap{padding-bottom:0;}
+  .hero-top{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:28px;}
+  .hero-side{display:flex;flex-direction:column;align-items:flex-end;gap:10px;}
+  .hero-title{font-size:21px;font-weight:600;letter-spacing:-.02em;color:var(--ink);}
+  .hero-title small{display:block;font-size:13px;font-weight:400;color:var(--sub);margin-top:3px;letter-spacing:0;}
+  .hero-meta{font-size:12.5px;color:var(--sub);text-align:right;line-height:1.7;}
+  .hero-meta b{color:var(--ink);font-weight:600;}
+  .lang-switch{display:flex;background:rgba(0,0,0,.05);border-radius:999px;padding:3px;gap:2px;}
+  .lang-btn{border:0;background:transparent;color:var(--sub);font-family:inherit;font-size:12.5px;font-weight:500;padding:5px 14px;border-radius:999px;cursor:pointer;transition:all .2s;}
+  .lang-btn.active{background:#fff;color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.08);}
+  .now{display:flex;flex-wrap:wrap;gap:32px;align-items:center;}
+  .now-temp{font-size:80px;font-weight:700;line-height:1;letter-spacing:-.04em;color:var(--ink);}
+  .now-temp sup{font-size:28px;font-weight:500;color:var(--sub);vertical-align:super;}
+  .now-main{font-size:22px;font-weight:500;margin:6px 0 4px;color:var(--ink);}
+  .now-range{font-size:14px;color:var(--sub);font-weight:400;}
+  .now-stats{display:flex;flex-wrap:wrap;gap:14px 24px;font-size:13.5px;color:var(--sub);margin-top:14px;font-weight:400;}
+  .now-stats span{white-space:nowrap;}
+  .now-stats b{color:var(--ink);font-weight:600;}
+  .tag{display:inline-block;background:rgba(0,0,0,.05);border-radius:999px;padding:2px 11px;font-size:12px;color:var(--sub);margin-left:10px;vertical-align:2px;font-weight:500;}
+
+  /* ===== 区块 ===== */
+  section{background:var(--card);border-radius:var(--radius);margin-top:20px;padding:28px 30px;box-shadow:var(--shadow);}
+  .sec-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin-bottom:20px;}
+  .sec-head h2{font-size:20px;font-weight:600;color:var(--ink);letter-spacing:-.02em;}
+  .sec-head .note{font-size:13px;color:var(--sub);font-weight:400;}
+  .sec-head .note b{color:var(--blue);font-weight:500;}
+
+  /* ===== 即时区：浅色卡片风格 ===== */
+  .live-wrap{background:var(--card);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);margin-top:20px;}
+  .live-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:var(--blue-soft);color:var(--ink);border-radius:var(--radius-sm);padding:12px 18px;}
+  .live-dot{width:8px;height:8px;border-radius:50%;background:var(--good);box-shadow:0 0 0 0 rgba(48,209,88,.5);animation:livePulse 2s infinite;}
+  @keyframes livePulse{0%{box-shadow:0 0 0 0 rgba(48,209,88,.45);}70%{box-shadow:0 0 0 8px rgba(48,209,88,0);}100%{box-shadow:0 0 0 0 rgba(48,209,88,0);}}
+  .live-bar .ttl{font-size:14px;font-weight:600;}
+  .live-bar .st{font-size:12.5px;color:var(--sub);}
+  .live-bar .uptime{margin-left:auto;font-size:12px;color:var(--sub);}
+  .live-bar .uptime b{color:var(--ink);font-weight:600;}
+  .live-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:14px;}
+  .live-cell{background:#f5f5f7;border-radius:var(--radius-sm);padding:14px 16px;}
+  .live-cell .k{font-size:12px;color:var(--sub);margin-bottom:4px;font-weight:500;}
+  .live-cell .v{font-size:22px;font-weight:600;color:var(--ink);letter-spacing:-.02em;}
+  .live-cell .v small{font-size:12px;color:var(--sub);font-weight:400;margin-left:3px;}
+  .live-7d{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13.5px;margin-top:16px;min-width:560px;}
+  .live-7d th{background:transparent;color:var(--sub);font-weight:500;padding:10px 8px;text-align:left;font-size:12px;border-bottom:1px solid var(--line);}
+  .live-7d td{border-bottom:1px solid var(--line);padding:11px 8px;color:var(--ink);background:transparent;font-weight:400;}
+  .live-7d .d{font-weight:600;color:var(--ink);}
+  .live-7d .d span{color:var(--sub);font-weight:400;font-size:11.5px;}
+  .live-7d .pr{color:var(--blue);font-weight:600;}
+  .live-7d tbody tr{transition:background .15s;}
+  .live-7d tbody tr:hover td{background:#f5f5f7;}
+  .live-hourly{margin-top:20px;}
+  .live-hourly .hdr{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin-bottom:10px;}
+  .live-hourly .hdr .t{font-size:15px;font-weight:600;color:var(--ink);}
+  .live-hourly .hdr .s{font-size:12.5px;color:var(--sub);}
+  .live-hourly .hdr .swipe{font-size:11.5px;color:var(--sub);margin-left:auto;font-weight:400;white-space:nowrap;flex-basis:100%;margin-left:0;margin-top:-2px;}
+  .hourly-scroll{overflow-x:auto;padding:2px 0 10px;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.15) transparent;scroll-snap-type:x proximity;border-radius:12px;
+    -webkit-mask-image:linear-gradient(to right,#000 0,#000 calc(100% - 30px),rgba(0,0,0,0) 100%);
+    mask-image:linear-gradient(to right,#000 0,#000 calc(100% - 30px),rgba(0,0,0,0) 100%);}
+  .hourly-scroll::-webkit-scrollbar{height:5px;}
+  .hourly-scroll::-webkit-scrollbar-track{background:transparent;}
+  .hourly-scroll::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:3px;}
+  .hourly-strip{display:flex;gap:8px;width:max-content;min-width:100%;padding:0 6px;box-sizing:border-box;}
+  .hour-cell{flex:0 0 62px;background:#f5f5f7;border-radius:14px;padding:10px 6px;text-align:center;scroll-snap-align:start;}
+  .hour-cell .hh{font-size:11px;color:var(--sub);font-weight:500;}
+  .hour-cell .hw{font-size:11px;color:var(--ink);margin:5px 0 2px;font-weight:500;}
+  .hour-cell .ht{font-size:16px;font-weight:600;color:var(--ink);}
+  .hour-cell .hp{font-size:10.5px;margin-top:3px;}
+  .hour-cell.rainy{background:#e8f0fe;}
+  .hour-cell.rainy .hp{color:var(--blue);font-weight:600;}
+  .hour-cell.now{outline:2px solid var(--blue);outline-offset:1px;}
+  .hour-cell.now .hh{color:var(--blue);}
+  .hp.rain{color:var(--blue);font-weight:600;}
+  .hp.dry{color:var(--sub);font-weight:400;}
+  .live-note{margin-top:12px;font-size:12px;color:var(--sub);}
+  .live-fail{display:none;margin-top:12px;font-size:13px;color:var(--bad);background:rgba(255,69,58,.08);border-radius:10px;padding:10px 14px;}
+
+  /* ===== 今日实况 ===== */
+  .now-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
+  .now-cell{background:#f5f5f7;border-radius:var(--radius-sm);padding:14px 16px;}
+  .now-cell .k{font-size:12.5px;color:var(--sub);margin-bottom:4px;font-weight:500;}
+  .now-cell .v{font-size:18px;font-weight:600;color:var(--ink);}
+  .now-cell .v small{font-size:12.5px;color:var(--sub);font-weight:400;margin-left:4px;}
+  .agree{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px;}
+  .agree-item{flex:1;min-width:220px;background:#f5f5f7;border-radius:var(--radius-sm);padding:14px 16px;font-size:13px;}
+  .agree-item .src{font-weight:600;color:var(--ink);margin-bottom:4px;font-size:13.5px;}
+  .agree-item .src i{font-style:normal;font-weight:400;color:var(--good);margin-left:8px;font-size:12px;}
+  .agree-item p{color:var(--sub);line-height:1.6;}
+  .agree-item .val{color:var(--ink);font-weight:600;}
+
+  /* ===== 空气 ===== */
+  .aqi-row{display:flex;flex-wrap:wrap;gap:12px;align-items:stretch;}
+  .aqi-main{flex:0 0 200px;background:linear-gradient(145deg,#30d158,#28b84e);color:#fff;border-radius:18px;padding:18px 20px;}
+  .aqi-main .k{font-size:12.5px;opacity:.9;margin-bottom:4px;font-weight:500;}
+  .aqi-main .num{font-size:44px;font-weight:700;line-height:1;letter-spacing:-.03em;}
+  .aqi-main .lvl{font-size:16px;font-weight:600;margin-top:6px;}
+  .aqi-main .lvl small{font-size:11.5px;font-weight:400;opacity:.9;}
+  .aqi-cards{flex:1;min-width:280px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;}
+  .aqi-cell{background:#f5f5f7;border-radius:14px;padding:12px 14px;}
+  .aqi-cell .k{font-size:12px;color:var(--sub);font-weight:500;}
+  .aqi-cell .v{font-size:16px;font-weight:600;color:var(--ink);margin-top:2px;}
+  .aqi-cell .v small{font-size:11.5px;color:var(--sub);font-weight:400;}
+  .aqi-src{margin-top:14px;font-size:12px;color:var(--sub);}
+
+  /* ===== 生活提醒 ===== */
+  .life-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;}
+  .life-card{background:#f5f5f7;border-radius:16px;padding:16px 18px;}
+  .life-card .ic{font-size:12px;font-weight:600;color:var(--ink);background:#fff;display:inline-block;padding:3px 12px;border-radius:999px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+  .life-card .tip{font-size:14.5px;color:var(--ink);font-weight:600;margin-bottom:4px;}
+  .life-card .desc{font-size:13px;color:var(--sub);line-height:1.6;}
+  .life-note{margin-top:12px;font-size:12px;color:var(--sub);}
+  .advice-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px;margin-top:18px;min-width:640px;}
+  .advice-table th{background:transparent;color:var(--sub);font-weight:500;padding:10px 10px;text-align:left;font-size:12.5px;border-bottom:1px solid var(--line);}
+  .advice-table td{border-bottom:1px solid var(--line);padding:11px 10px;vertical-align:top;color:var(--ink);}
+  .advice-table .d{font-weight:600;color:var(--ink);white-space:nowrap;}
+  .advice-table .wd{font-size:11.5px;color:var(--sub);display:block;font-weight:400;}
+
+  /* ===== 对照表 ===== */
+  .tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.15) transparent;}
+  .tbl-scroll.edge{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 26px),rgba(0,0,0,0));mask-image:linear-gradient(to right,#000 calc(100% - 26px),rgba(0,0,0,0));}
+  table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13.5px;min-width:720px;}
+  colgroup .c-date{width:13%;} colgroup .c-nmc{width:21%;} colgroup .c-wx{width:21%;} colgroup .c-state{width:27%;} colgroup .c-3rd{width:18%;}
+  th{background:transparent;color:var(--sub);font-weight:500;padding:11px 10px;text-align:left;font-size:12.5px;border-bottom:1px solid var(--line);}
+  th small{display:block;font-weight:400;font-size:11px;color:var(--sub);margin-top:2px;}
+  td{border-bottom:1px solid var(--line);padding:11px 10px;vertical-align:top;background:transparent;}
+  td .d{font-weight:600;color:var(--ink);font-size:14.5px;}
+  td .wd{font-size:11.5px;color:var(--sub);display:block;font-weight:400;}
+  td .w{font-weight:500;color:var(--ink);}
+  td .t{font-size:12.5px;color:var(--sub);display:block;}
+  tbody tr{transition:background .15s;}
+  tbody tr:hover td{background:#f5f5f7;}
+  tr.row-warn td{background:#fff8e6;}
+  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px;}
+  .dot.a{background:var(--good);} .dot.b{background:var(--warn);} .dot.c{background:#ff9500;}
+
+  /* ===== 图表 ===== */
+  #trend{width:100%;height:360px;}
+  .chart-note{font-size:12.5px;color:var(--sub);margin-top:10px;}
+
+  /* ===== 提醒 ===== */
+  .alert{background:#fff8e6;border-radius:var(--radius);padding:20px 22px;margin-top:20px;}
+  .alert h3{font-size:16px;font-weight:600;color:#92400e;margin-bottom:10px;}
+  .alert ul{margin:0 0 0 20px;}
+  .alert li{font-size:14px;color:#6b4a0e;margin-bottom:6px;line-height:1.6;}
+  .alert li b{color:#92400e;font-weight:600;}
+  .alert .ts{font-size:12px;color:#a06a00;margin-top:10px;}
+
+  /* ===== 来源 ===== */
+  .src-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;}
+  .src-item{background:#f5f5f7;border-radius:14px;padding:14px 16px;font-size:13px;}
+  .src-item .n{font-weight:600;color:var(--ink);}
+  .src-item a{color:var(--blue);text-decoration:none;word-break:break-all;font-size:12.5px;}
+  .src-item a:hover{text-decoration:underline;}
+  .src-item p{color:var(--sub);font-size:12.5px;margin-top:4px;}
+
+  footer{margin-top:40px;font-size:12px;color:var(--sub);text-align:center;line-height:1.8;}
+  footer b{color:var(--sub);font-weight:500;}
+
+  @media (max-width:640px){
+    .live-bar .uptime{margin-left:0;width:100%;text-align:left;}
+    .hero{padding:32px 0 30px;}
+    .hero-top{flex-direction:column;align-items:flex-start;}
+    .hero-side{align-items:flex-start;}
+    .now-temp{font-size:60px;}
+    .hero-meta{text-align:left;}
+    .now{flex-direction:column;align-items:flex-start;gap:18px;}
+    .now-stats{gap:10px 18px;font-size:13px;width:100%;}
+    #trend{height:300px;}
+    section{padding:20px;border-radius:18px;}
+    .live-wrap{padding:16px;border-radius:18px;}
+    .aqi-main{flex-basis:100%;}
+    .alert{border-radius:18px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="wrap">
+    <div class="hero-top">
+      <div class="hero-title" data-i18n="hero.title">恩施天氣<small data-i18n="hero.sub">湖北恩施土家族苗族自治州 · 多方來源交叉確認</small></div>
+      <div class="hero-side">
+        <div class="lang-switch" role="group" aria-label="Language">
+          <button class="lang-btn" data-lang="zh-TW" type="button">繁體中文</button>
+          <button class="lang-btn active" data-lang="zh-CN" type="button">简体中文</button>
+        </div>
+        <div class="hero-meta"><span data-i18n="meta.update">即時更新：</span><b id="heroUptime">—</b>（Open-Meteo）<br><span data-i18n="meta.snap">官方快照：</span><b>2026-10-05 18:00</b>（<span data-i18n="meta.src">中央氣象台</span>）<br><span data-i18n="meta.city">湖北恩施學院 · 金龍大道 · 海拔約 500m</span></div>
+      </div>
+    </div>
+    <div class="now">
+      <div>
+        <div class="now-temp"><span id="heroTemp">22</span><sup>°C</sup></div>
+        <div class="now-main"><span id="heroWeather">陣雨</span><span class="tag" data-i18n="hero.today">今天</span></div>
+        <div class="now-range" data-i18n="hero.range">官方今日 15°C ~ 28°C · 多雲</div>
+      </div>
+      <div class="now-stats">
+        <span><span data-i18n="s.hum">濕度</span> <b id="heroHum">72%</b></span>
+        <span><span data-i18n="s.feel">體感</span> <b id="heroFeel">22.3°C</b></span>
+        <span><span data-i18n="s.wind">風向</span> <b id="heroWind">西北風</b></span>
+        <span><span data-i18n="s.aqi">空氣品質</span> <b id="heroAqi">優</b></span>
+        <span><span data-i18n="s.rise">日出</span> <b id="heroRise">06:26</b></span>
+        <span><span data-i18n="s.set">日落</span> <b id="heroSet">18:48</b></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- ===== 即時自動更新（Open-Meteo） ===== -->
+  <div class="live-wrap">
+    <div class="live-bar">
+      <span class="live-dot" aria-hidden="true"></span>
+      <span class="ttl" data-i18n="live.title">即時更新</span>
+      <span class="st" data-i18n="live.sub">每 15 分鐘自動重新抓取 · 來源：Open-Meteo（國際數值模式，官方為準）</span>
+      <span class="uptime"><span data-i18n="live.updated">上次更新</span> <b id="liveUptime">—</b></span>
+    </div>
+    <div class="live-grid">
+      <div class="live-cell"><div class="k" data-i18n="live.now">即時氣溫</div><div class="v"><span id="liveTemp">—</span><small>°C</small></div></div>
+      <div class="live-cell"><div class="k" data-i18n="live.weather">即時天氣</div><div class="v" style="font-size:14px;" id="liveWeather">—</div></div>
+      <div class="live-cell"><div class="k" data-i18n="live.hum">濕度</div><div class="v"><span id="liveHum">—</span><small>%</small></div></div>
+      <div class="live-cell"><div class="k" data-i18n="live.wind">風速</div><div class="v"><span id="liveWind">—</span><small>km/h</small></div></div>
+      <div class="live-cell"><div class="k" data-i18n="live.aqi">AQI（美國標準）</div><div class="v"><span id="liveAqi">—</span><small id="liveAqiLvl"></small></div></div>
+      <div class="live-cell"><div class="k" data-i18n="live.pm">PM2.5</div><div class="v"><span id="livePm">—</span><small>μg/m³</small></div></div>
+    </div>
+    <div class="tbl-scroll">
+    <table class="live-7d">
+      <colgroup><col style="width:14%"><col style="width:22%"><col style="width:18%"><col style="width:18%"><col style="width:14%"><col style="width:14%"></colgroup>
+      <thead><tr><th data-i18n="live.d">日期</th><th data-i18n="live.w">天氣</th><th data-i18n="live.hi">最高</th><th data-i18n="live.lo">最低</th><th data-i18n="live.rain">降水量</th><th data-i18n="live.pr">降雨機率</th></tr></thead>
+      <tbody id="live7d"><tr><td colspan="6" style="color:#8fb4d6;" data-i18n="live.loading">載入中…</td></tr></tbody>
+    </table>
+    </div>
+    <div class="live-hourly">
+      <div class="hdr">
+        <span class="t" data-i18n="hourly.title">今日每小時</span>
+        <span class="s" data-i18n="hourly.sub">溫度與降雨機率（黃框＝現在；藍底＝該時段有雨）</span>
+        <span class="swipe" data-i18n="hourly.swipe">← 左右滑動查看更多 →</span>
+      </div>
+      <div class="hourly-scroll">
+        <div class="hourly-strip" id="hourlyStrip"><div style="color:#8fb4d6;font-size:12px;padding:8px;" data-i18n="live.loading">載入中…</div></div>
+      </div>
+    </div>
+    <div class="live-note" data-i18n="live.note">註：即時區為國際數值模式資料，與下方中國官方（中央氣象台／中國天氣網）口徑可能略有差異，以下方官方區塊為準。</div>
+    <div class="live-fail" id="liveFail"></div>
+  </div>
+
+  <!-- ===== 今日實況 ===== -->
+  <section>
+    <div class="sec-head">
+      <h2 data-i18n="sec.today">今日實況總覽</h2>
+      <span class="note" data-i18n="sec.today.note">多方來源對今日天氣描述一致</span>
+    </div>
+    <div class="now-grid">
+      <div class="now-cell"><div class="k" data-i18n="g.weather">天氣</div><div class="v" data-i18n="g.weather.v">多雲</div></div>
+      <div class="now-cell"><div class="k" data-i18n="g.temp">氣溫</div><div class="v">15 ~ 28<small>°C</small></div></div>
+      <div class="now-cell"><div class="k" data-i18n="g.hum">濕度</div><div class="v">72%<small data-i18n="g.real">（實測）</small></div></div>
+      <div class="now-cell"><div class="k" data-i18n="g.wind">風力</div><div class="v" data-i18n="g.wind.v">微風 &lt;3 級</div></div>
+      <div class="now-cell"><div class="k" data-i18n="g.aqi">空氣品質</div><div class="v" data-i18n="g.aqi.v">優 · AQI 42~49</div></div>
+      <div class="now-cell"><div class="k" data-i18n="g.rain">降水</div><div class="v" data-i18n="g.rain.v">多雲 · 無降水</div></div>
+    </div>
+    <div class="agree">
+      <div class="agree-item">
+        <div class="src"><span data-i18n="src.nmc">中央氣象台</span> <i>✔ <span data-i18n="src.agree">一致</span></i></div>
+        <p data-i18n="src.nmc.d">陣雨 · 22/18°C，實況 21.5°C、濕度 72%、體感 22.3°C</p>
+      </div>
+      <div class="agree-item">
+        <div class="src"><span data-i18n="src.wx">中國天氣網</span> <i>✔ <span data-i18n="src.agree">一致</span></i></div>
+        <p data-i18n="src.wx.d">陣雨 · 22/18°C，分時段 11–14 時最高約 22°C</p>
+      </div>
+      <div class="agree-item">
+        <div class="src"><span data-i18n="src.3rd">第三方（墨跡）</span> <i>△ <span data-i18n="src.close">相近</span></i></div>
+        <p data-i18n="src.3rd.d">第三方 App 數值模式，僅作交叉參考，量級以官方為準</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 空氣品質 ===== -->
+  <section>
+    <div class="sec-head">
+      <h2 data-i18n="sec.aqi">空氣品質</h2>
+      <span class="note" data-i18n="sec.aqi.note">多方來源交叉確認，今天空氣很好</span>
+    </div>
+    <div class="aqi-row">
+      <div class="aqi-main">
+        <div class="k" data-i18n="aqi.now">恩施學院即時</div>
+        <div class="num">42<small style="font-size:16px;font-weight:500;">~49</small></div>
+        <div class="lvl" data-i18n="aqi.good">優<small data-i18n="aqi.good.d"> · 一級 · 令人滿意</small></div>
+      </div>
+      <div class="aqi-cards">
+        <div class="aqi-cell"><div class="k">PM₂.₅</div><div class="v">18~33<small> μg/m³</small></div></div>
+        <div class="aqi-cell"><div class="k">PM₁₀</div><div class="v">24~42<small> μg/m³</small></div></div>
+        <div class="aqi-cell"><div class="k">O₃</div><div class="v">50~68<small> μg/m³</small></div></div>
+        <div class="aqi-cell"><div class="k" data-i18n="aqi.main">首要污染物</div><div class="v">O₃ / PM</div></div>
+      </div>
+    </div>
+    <div class="aqi-src" data-i18n="aqi.src">來源：恩施州生態環境局即時發布（08:00 AQI 42、PM2.5 18）、天氣後報（11:00 AQI 49）、和風天氣（13:20 AQI 優）、湖北省生態環境廳（恩施州 AQI 42~65）</div>
+  </section>
+
+  <!-- ===== 生活提醒 ===== -->
+  <section>
+    <div class="sec-head">
+      <h2 data-i18n="sec.life">生活提醒</h2>
+      <span class="note" data-i18n="sec.life.note">依今日實況 + 未來 3 天自動生成，每日更新</span>
+    </div>
+    <div class="life-grid">
+      <div class="life-card">
+        <span class="ic" data-i18n="life.dress">穿搭</span>
+        <div class="tip" data-i18n="life.dress.tip">洋蔥式穿搭：短袖 + 薄外套</div>
+        <div class="desc" data-i18n="life.dress.d">早晚 15°C 偏涼、午間 28°C 偏暖，建議洋蔥式穿搭，方便穿脫。</div>
+      </div>
+      <div class="life-card bad">
+        <span class="ic" data-i18n="life.umbrella">雨具</span>
+        <div class="tip" data-i18n="life.umbrella.tip">今天多雲無雨，不用帶傘</div>
+        <div class="desc" data-i18n="life.umbrella.d">今日多雲為主、無明顯降水，不用帶傘；後天起轉晴，紫外線漸強。</div>
+      </div>
+      <div class="life-card">
+        <span class="ic" data-i18n="life.mask">口罩</span>
+        <div class="tip" data-i18n="life.mask.tip">空氣良好，不需口罩</div>
+        <div class="desc" data-i18n="life.mask.d">空氣品質良好，一般無需戴口罩；過敏體質或空污警報時可佩戴。</div>
+      </div>
+      <div class="life-card">
+        <span class="ic" data-i18n="life.sun">防曬</span>
+        <div class="tip" data-i18n="life.sun.tip">多雲仍需防曬</div>
+        <div class="desc" data-i18n="life.sun.d">多雲天紫外線中等，出門建議 SPF 15+ 防曬；後天晴熱可提高到 SPF 30。</div>
+      </div>
+    </div>
+    <div class="tbl-scroll">
+      <table class="advice-table">
+        <colgroup><col style="width:16%"><col style="width:21%"><col style="width:21%"><col style="width:21%"><col style="width:21%"></colgroup>
+        <thead><tr><th data-i18n="adv.date">日期</th><th data-i18n="adv.dress">穿搭建議</th><th data-i18n="adv.umbrella">雨具</th><th data-i18n="adv.mask">口罩</th><th data-i18n="adv.sun">防曬</th></tr></thead>
+        <tbody id="adviceBody">
+          <tr><td colspan="5" style="color:var(--sub);text-align:center;padding:16px;">…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="life-note" data-i18n="life.note">生活指數依據：和風天氣穿衣指數「較舒適」、感冒指數「較易發」、運動「較不宜」；紫外線「最弱」。雨天路滑，戶外運動改室內。</div>
+  </section>
+
+  <!-- ===== 未來 7 天對照 ===== -->
+  <section>
+    <div class="sec-head">
+      <h2 data-i18n="sec.7d">未來 7 天 · 多方來源對照</h2>
+      <span class="note" data-i18n="sec.7d.note">以官方為準；第三方僅供參考，個別日期有出入</span>
+    </div>
+    <div class="tbl-scroll">
+      <table>
+        <colgroup>
+          <col class="c-date"><col class="c-nmc"><col class="c-wx"><col class="c-state"><col class="c-3rd">
+        </colgroup>
+        <thead>
+          <tr>
+            <th data-i18n="t.date">日期</th>
+            <th data-i18n="t.weather">天氣</th>
+            <th data-i18n="t.temp">最高 / 最低</th>
+            <th data-i18n="t.prob">降水概率</th>
+            <th data-i18n="t.rain">降水量</th>
+          </tr>
+        </thead>
+        <tbody id="cmpBody">
+          <tr><td colspan="5" style="color:var(--sub);text-align:center;padding:16px;">…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="agree" style="margin-top:14px;">
+      <div class="agree-item"><span class="dot a"></span><span class="val" data-i18n="agree.high">資料來源</span><p data-i18n="agree.high.d">Open-Meteo 數值模式，每 15 分鐘自動更新，日期永遠從今天起算</p></div>
+      <div class="agree-item"><span class="dot b"></span><span class="val" data-i18n="agree.small">官方口徑</span><p data-i18n="agree.small.d">出行決策仍建議以中央氣象台／中國天氣網當日發布為準</p></div>
+      <div class="agree-item"><span class="dot c"></span><span class="val" data-i18n="agree.dev">即時對照</span><p data-i18n="agree.dev.d">與上方「即時更新」區同資料，下方生活建議亦隨即時天氣生成</p></div>
+    </div>
+  </section>
+
+  <!-- ===== 15 天趨勢 ===== -->
+  <section>
+    <div class="sec-head">
+      <h2 data-i18n="sec.15d">未來 15 天趨勢</h2>
+      <span class="note" data-i18n="sec.15d.note">柱＝日降水量（mm）· 線＝最高/最低氣溫（°C）；第 8 天起為延伸預報，僅看趨勢</span>
+    </div>
+    <div id="trend"></div>
+    <div class="chart-note" data-i18n="chart.note">資料來源：Open-Meteo 數值模式，每 15 分鐘自動更新；長期趨勢僅供參考，出行以官方當日預報為準。</div>
+  </section>
+
+  <!-- ===== 重點提醒 ===== -->
+  <div class="alert">
+    <h3 data-i18n="alert.title">接下來 72 小時重點提醒</h3>
+    <ul>
+      <li data-i18n="alert.l1"><b>留意官方即時預報</b>，天氣變化快，出門前再確認一次。</li>
+      <li data-i18n="alert.l2">恩施多山，山區路況與天氣變化大，出行注意安全。</li>
+      <li data-i18n="alert.l3">學院位於山坡地，早晚與日間常有溫差，建議洋蔥式穿搭。</li>
+      <li data-i18n="alert.l4">長時間戶外建議<b>做好防曬</b>，並留意官方發布的天氣警報。</li>
+    </ul>
+    <div class="ts" data-i18n="alert.ts">提醒為通用氣象建議；具體預警以恩施州氣象台當日發布為準</div>
+  </div>
+
+  <!-- ===== 來源 ===== -->
+  <section>
+    <div class="sec-head"><h2 data-i18n="sec.src">資料來源</h2></div>
+    <div class="src-list">
+      <div class="src-item">
+        <div class="n" data-i18n="src.nmc">中央氣象台（國家氣象中心）</div>
+        <a href="http://www.nmc.cn/publish/forecast/AHB/enshi.html" target="_blank" rel="noopener">nmc.cn/publish/forecast/AHB/enshi.html</a>
+        <p data-i18n="src.nmc.d2">官方第一手發布，10-05 18:00 更新</p>
+      </div>
+      <div class="src-item">
+        <div class="n" data-i18n="src.wx">中國天氣網（中國氣象局對外服務）</div>
+        <a href="https://www.weather.com.cn/weather/101201001.shtml" target="_blank" rel="noopener">weather.com.cn/weather/101201001.shtml</a>
+        <p data-i18n="src.wx.d2">7 天預報 + 生活指數，11:30 更新</p>
+      </div>
+      <div class="src-item">
+        <div class="n" data-i18n="src.aqi2">恩施州生態環境局（空氣品質）</div>
+        <a href="http://hbj.enshi.gov.cn/hbjtq/index.php" target="_blank" rel="noopener">hbj.enshi.gov.cn/hbjtq</a>
+        <p data-i18n="src.aqi2.d">官方 AQI 即時發布</p>
+      </div>
+      <div class="src-item">
+        <div class="n" data-i18n="src.state">恩施州氣象台（經雲上恩施發布）</div>
+        <a href="https://www.estv.com.cn/qxgg/index.htm" target="_blank" rel="noopener">estv.com.cn/qxgg/index.htm</a>
+        <p data-i18n="src.state.d">州級 1–3 天官方預報與預警</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span data-i18n="footer.l1">本看板由多方公開氣象來源交叉核對生成，僅供日常參考。</span><br>
+    <b data-i18n="footer.l2">出行決策請以官方當日最新發布為準</b>（<span data-i18n="footer.l3">中央氣象台／中國天氣網／恩施州氣象台</span>）。
+  </footer>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var I18N = {
+    'zh-TW': {
+      'hero.title':'恩施天氣','hero.sub':'湖北恩施學院（恩施市金龍大道） · 多方來源交叉確認',
+      'meta.update':'即時更新：','meta.src':'中央氣象台','meta.snap':'官方快照：','meta.city':'湖北恩施學院 · 金龍大道 · 海拔約 500m',
+      'live.title':'即時更新','live.sub':'每 15 分鐘自動重新抓取 · 定位：湖北恩施學院（Open-Meteo 數值模式）','live.updated':'上次更新',
+      'live.now':'即時氣溫','live.weather':'即時天氣','live.hum':'濕度','live.wind':'風速','live.aqi':'AQI（美國標準）','live.pm':'PM2.5',
+      'live.d':'日期','live.w':'天氣','live.hi':'最高','live.lo':'最低','live.rain':'降水量','live.pr':'降雨機率','live.loading':'載入中…',
+      'live.note':'註：即時區為國際數值模式資料，與下方中國官方（中央氣象台／中國天氣網）口徑可能略有差異，以下方官方區塊為準。',
+      'live.fail':'即時資料暫時無法取得（可能無網路），已顯示上次成功抓取的數值。',
+      'hourly.title':'今日每小時','hourly.sub':'溫度與降雨機率（黃框＝現在；藍底＝該時段有雨）','hourly.swipe':'← 左右滑動查看更多 →',
+      'w.shower':'陣雨','hero.today':'今天','hero.range':'官方今日 15°C ~ 28°C · 多雲',
+      's.hum':'濕度','s.feel':'體感','s.wind':'風向','s.aqi':'空氣品質','s.rise':'日出','s.set':'日落',
+      'sec.today':'今日實況總覽','sec.today.note':'官方快照 10-05 · 即時數值以上方「即時更新」區為準',
+      'g.weather':'天氣','g.weather.v':'多云','g.temp':'氣溫','g.hum':'濕度','g.real':'（實測）',
+      'g.wind':'風力','g.wind.v':'微風 <3 級','g.aqi':'空氣品質','g.aqi.v':'優 · AQI 42~49','g.rain':'降水','g.rain.v':'多云 · 无降水',
+      'src.nmc':'中央氣象台','src.agree':'一致','src.nmc.d':'陣雨 · 22/18°C，實況 21.5°C、濕度 72%、體感 22.3°C',
+      'src.wx':'中國天氣網','src.wx.d':'陣雨 · 22/18°C，分時段 11–14 時最高約 22°C',
+      'src.3rd':'第三方（墨跡）','src.close':'相近','src.3rd.d':'第三方 App 數值模式，僅作交叉參考，量級以官方為準',
+      'sec.aqi':'空氣品質','sec.aqi.note':'官方快照 10-05 · 即時 AQI 以上方為準',
+      'aqi.now':'恩施學院即時','aqi.good':'優','aqi.good.d':' · 一級 · 令人滿意','aqi.main':'首要污染物',
+      'aqi.src':'來源：恩施州生態環境局即時發布（08:00 AQI 42、PM2.5 18）、天氣後報（11:00 AQI 49）、和風天氣（13:20 AQI 優）、湖北省生態環境廳（恩施州 AQI 42~65）',
+      'sec.life':'生活提醒','sec.life.note':'下方建議表已隨即時資料更新；上方四卡為 10-05 參考',
+      'life.dress':'穿搭','life.dress.tip':'洋蔥式穿搭：短袖 + 薄外套','life.dress.d':'早晚 15°C 偏涼、午間 28°C 偏暖，建議洋蔥式穿搭，方便穿脫。',
+      'life.umbrella':'雨具','life.umbrella.tip':'今天多雲無雨，不用帶傘','life.umbrella.d':'今日多雲為主、無明顯降水，不用帶傘；後天起轉晴，紫外線漸強。',
+      'life.mask':'口罩','life.mask.tip':'空氣良好，不需口罩','life.mask.d':'空氣品質良好，一般無需戴口罩；過敏體質或空污警報時可佩戴。',
+      'life.sun':'防曬','life.sun.tip':'多雲仍需防曬','life.sun.d':'多雲天紫外線中等，出門建議 SPF 15+ 防曬；後天晴熱可提高到 SPF 30。',
+      'adv.date':'日期','adv.dress':'穿搭建議','adv.umbrella':'雨具','adv.mask':'口罩','adv.sun':'防曬','adv.today':'今天',
+      'adv.d1':'薄外套＋長褲','adv.u1':'隨身帶傘','adv.m1':'不需','adv.s1':'SPF 8~12',
+      'adv.d2':'薄外套＋長袖，可加薄毛衣','adv.u2':'必帶雨傘／雨衣','adv.m2':'不需','adv.s2':'紫外線弱',
+      'adv.d3':'薄外套＋長袖，濕冷注意保暖','adv.u3':'必帶雨傘，減少外出','adv.m3':'不需','adv.s3':'紫外線弱',
+      'adv.d4':'轉暖，短袖或薄長袖','adv.u4':'基本不需','adv.m4':'不需','adv.s4':'轉晴，建議 SPF 15+',
+      'life.note':'生活指數依據：和風天氣穿衣指數「較舒適」、感冒指數「較易發」、運動「較不宜」；紫外線「最弱」。雨天路滑，戶外運動改室內。',
+      'sec.7d':'未來 7 天預報','sec.7d.note':'Open-Meteo 數值模式，每 15 分鐘自動更新，日期永遠從今天起算',
+      't.date':'日期','t.weather':'天氣','t.temp':'最高 / 最低','t.prob':'降水概率','t.rain':'降水量','cmp.today':'今天',
+      'w.light':'小雨','w.moderate':'中雨','w.heavy':'大雨','w.overcast':'陰','w.over2cloudy':'陰轉多雲',
+      'w.mod2heavy':'中雨 → 大雨','w.mod2heavy2':'中雨轉大雨','w.heavy2mod':'大雨 → 中雨','w.heavy2mod2':'大雨轉中雨',
+      'w.mod2shower':'中雨 → 陣雨','w.shower2over':'陣雨轉陰','w.over2shower':'陰 → 陣雨',
+      't15.rain':'陰有間斷小雨','t15.rain.s':'州內大部小雨','t16.rain':'中雨為主，偏北大雨','t16.rain.s':'急流發展，降水加強',
+      't17.rain':'大雨 / 暴雨','t17.rain.s':'偏北區域暴雨，少數鄉鎮大暴雨','t18.rain':'降水減弱','t18.rain.s':'18 日傍晚趨於結束','t.na':'預報範圍外',
+      'agree.high':'資料來源','agree.high.d':'Open-Meteo 數值模式，每 15 分鐘自動更新，日期永遠從今天起算',
+      'agree.small':'官方口徑','agree.small.d':'出行決策仍建議以中央氣象台／中國天氣網當日發布為準',
+      'agree.dev':'即時對照','agree.dev.d':'與上方「即時更新」區同資料，下方生活建議亦隨即時天氣生成',
+      'sec.15d':'未來 15 天趨勢','sec.15d.note':'柱＝日降水量（mm）· 線＝最高/最低氣溫（°C）；第 8 天起為延伸預報，僅看趨勢',
+      'chart.note':'資料來源：Open-Meteo 數值模式，每 15 分鐘自動更新；長期趨勢僅供參考，出行以官方當日預報為準。',
+      'alert.title':'接下來 72 小時重點提醒',
+      'alert.l1':'<b>留意官方即時預報</b>，天氣變化快，出門前再確認一次。',
+      'alert.l2':'恩施多山，山區路況與天氣變化大，出行注意安全。',
+      'alert.l3':'學院位於山坡地，早晚與日間常有溫差，建議洋蔥式穿搭。',
+      'alert.l4':'長時間戶外建議<b>做好防曬</b>，並留意官方發布的天氣警報。',
+      'alert.ts':'提醒為通用氣象建議；具體預警以恩施州氣象台當日發布為準',
+      'sec.src':'資料來源','src.nmc.d2':'官方第一手發布，10-05 18:00 更新','src.wx.d2':'7 天預報 + 生活指數，11:30 更新',
+      'src.aqi2':'恩施州生態環境局（空氣品質）','src.aqi2.d':'官方 AQI 即時發布',
+      'src.state':'恩施州氣象台（經雲上恩施發布）','src.state.d':'州級 1–3 天官方預報與預警',
+      'footer.l1':'本看板由多方公開氣象來源交叉核對生成，僅供日常參考。',
+      'footer.l2':'出行決策請以官方當日最新發布為準','footer.l3':'中央氣象台／中國天氣網／恩施州氣象台'
+    },
+    'zh-CN': {
+      'hero.title':'恩施天气','hero.sub':'湖北恩施学院（恩施市金龙大道） · 多方来源交叉确认',
+      'meta.update':'即时更新：','meta.src':'中央气象台','meta.snap':'官方快照：','meta.city':'湖北恩施学院 · 金龙大道 · 海拔约 500m',
+      'live.title':'即时更新','live.sub':'每 15 分钟自动重新抓取 · 定位：湖北恩施学院（Open-Meteo 数值模式）','live.updated':'上次更新',
+      'live.now':'即时气温','live.weather':'即时天气','live.hum':'湿度','live.wind':'风速','live.aqi':'AQI（美国标准）','live.pm':'PM2.5',
+      'live.d':'日期','live.w':'天气','live.hi':'最高','live.lo':'最低','live.rain':'降水量','live.pr':'降雨概率','live.loading':'加载中…',
+      'live.note':'注：即时区为国际数值模式资料，与下方中国官方（中央气象台／中国天气网）口径可能略有差异，以下方官方区块为准。',
+      'live.fail':'即时资料暂时无法取得（可能无网络），已显示上次成功抓取的数值。',
+      'hourly.title':'今日每小时','hourly.sub':'温度与降雨概率（黄框＝现在；蓝底＝该时段有雨）','hourly.swipe':'← 左右滑动查看更多 →',
+      'w.shower':'阵雨','hero.today':'今天','hero.range':'官方今日 15°C ~ 28°C · 多云',
+      's.hum':'湿度','s.feel':'体感','s.wind':'风向','s.aqi':'空气质量','s.rise':'日出','s.set':'日落',
+      'sec.today':'今日实况总览','sec.today.note':'官方快照 10-05 · 即时数值以上方「即时更新」区为准',
+      'g.weather':'天气','g.weather.v':'多云','g.temp':'气温','g.hum':'湿度','g.real':'（实测）',
+      'g.wind':'风力','g.wind.v':'微风 <3 级','g.aqi':'空气质量','g.aqi.v':'优 · AQI 42~49','g.rain':'降水','g.rain.v':'多云 · 无降水',
+      'src.nmc':'中央气象台','src.agree':'一致','src.nmc.d':'阵雨 · 22/18°C，实况 21.5°C、湿度 72%、体感 22.3°C',
+      'src.wx':'中国天气网','src.wx.d':'阵雨 · 22/18°C，分时段 11–14 时最高约 22°C',
+      'src.3rd':'第三方（墨迹）','src.close':'相近','src.3rd.d':'第三方 App 数值模式，仅作交叉参考，量级以官方为准',
+      'sec.aqi':'空气质量','sec.aqi.note':'官方快照 10-05 · 即时 AQI 以上方为准',
+      'aqi.now':'恩施学院即时','aqi.good':'优','aqi.good.d':' · 一级 · 令人满意','aqi.main':'首要污染物',
+      'aqi.src':'来源：恩施州生态环境局即时发布（08:00 AQI 42、PM2.5 18）、天气后报（11:00 AQI 49）、和风天气（13:20 AQI 优）、湖北省生态环境厅（恩施州 AQI 42~65）',
+      'sec.life':'生活提醒','sec.life.note':'下方建议表已随即时资料更新；上方四卡为 10-05 参考',
+      'life.dress':'穿搭','life.dress.tip':'洋葱式穿搭：短袖 + 薄外套','life.dress.d':'早晚 15°C 偏凉、午间 28°C 偏暖，建议洋葱式穿搭，方便穿脱。',
+      'life.umbrella':'雨具','life.umbrella.tip':'今天多云无雨，不用带伞','life.umbrella.d':'今日多云为主、无明显降水，不用带伞；后天起转晴，紫外线渐强。',
+      'life.mask':'口罩','life.mask.tip':'空气良好，不需口罩','life.mask.d':'空气质量良好，无需佩戴口罩；过敏体质者可自行评估。',
+      'life.sun':'防晒','life.sun.tip':'紫外线弱，基础防护即可','life.sun.d':'多云天紫外线中等，出门建议 SPF 15+ 防晒；后天晴热可提高到 SPF 30。',
+      'adv.date':'日期','adv.dress':'穿搭建议','adv.umbrella':'雨具','adv.mask':'口罩','adv.sun':'防晒','adv.today':'今天',
+      'adv.d1':'薄外套＋长裤','adv.u1':'随身带伞','adv.m1':'不需','adv.s1':'SPF 8~12',
+      'adv.d2':'薄外套＋长袖，可加薄毛衣','adv.u2':'必带雨伞／雨衣','adv.m2':'不需','adv.s2':'紫外线弱',
+      'adv.d3':'薄外套＋长袖，湿冷注意保暖','adv.u3':'必带雨伞，减少外出','adv.m3':'不需','adv.s3':'紫外线弱',
+      'adv.d4':'转暖，短袖或薄长袖','adv.u4':'基本不需','adv.m4':'不需','adv.s4':'转晴，建议 SPF 15+',
+      'life.note':'生活指数依据：和风天气穿衣指数「较舒适」、感冒指数「较易发」、运动「较不宜」；紫外线「最弱」。雨天路滑，户外运动改室内。',
+      'sec.7d':'未来 7 天预报','sec.7d.note':'Open-Meteo 数值模式，每 15 分钟自动更新，日期永远从今天起算',
+      't.date':'日期','t.weather':'天气','t.temp':'最高 / 最低','t.prob':'降水概率','t.rain':'降水量','cmp.today':'今天',
+      'w.light':'小雨','w.moderate':'中雨','w.heavy':'大雨','w.overcast':'阴','w.over2cloudy':'阴转多云',
+      'w.mod2heavy':'中雨 → 大雨','w.mod2heavy2':'中雨转大雨','w.heavy2mod':'大雨 → 中雨','w.heavy2mod2':'大雨转中雨',
+      'w.mod2shower':'中雨 → 阵雨','w.shower2over':'阵雨转阴','w.over2shower':'阴 → 阵雨',
+      't15.rain':'阴有间断小雨','t15.rain.s':'州内大部小雨','t16.rain':'中雨为主，偏北大雨','t16.rain.s':'急流发展，降水加强',
+      't17.rain':'大雨 / 暴雨','t17.rain.s':'偏北区域暴雨，少数乡镇大暴雨','t18.rain':'降水减弱','t18.rain.s':'18 日傍晚趋于结束','t.na':'预报范围外',
+      'agree.high':'资料来源','agree.high.d':'Open-Meteo 数值模式，每 15 分钟自动更新，日期永远从今天起算',
+      'agree.small':'官方口径','agree.small.d':'出行决策仍建议以中央气象台／中国天气网当日发布为准',
+      'agree.dev':'即时对照','agree.dev.d':'与上方「即时更新」区同资料，下方生活建议亦随即时天气生成',
+      'sec.15d':'未来 15 天趋势','sec.15d.note':'柱＝日降水量（mm）· 线＝最高/最低气温（°C）；第 8 天起为延伸预报，仅看趋势',
+      'chart.note':'资料来源：Open-Meteo 数值模式，每 15 分钟自动更新；长期趋势仅供参考，出行以官方当日预报为准。',
+      'alert.title':'接下来 72 小时重点提醒',
+      'alert.l1':'<b>留意官方即时预报</b>，天气变化快，出门前再确认一次。',
+      'alert.l2':'恩施多山，山区路况与天气变化大，出行注意安全。',
+      'alert.l3':'学院位于山坡地，早晚与日间常有温差，建议洋葱式穿搭。',
+      'alert.l4':'长时间户外建议<b>做好防晒</b>，并留意官方发布的天气警报。',
+      'alert.ts':'提醒为通用气象建议；具体预警以恩施州气象台当日发布为准',
+      'sec.src':'资料来源','src.nmc.d2':'官方第一手发布，10-05 18:00 更新','src.wx.d2':'7 天预报 + 生活指数，11:30 更新',
+      'src.aqi2':'恩施州生态环境局（空气质量）','src.aqi2.d':'官方 AQI 即时发布',
+      'src.state':'恩施州气象台（经云上恩施发布）','src.state.d':'州级 1–3 天官方预报与预警',
+      'footer.l1':'本看板由多方公开气象来源交叉核对生成，仅供日常参考。',
+      'footer.l2':'出行决策请以官方当日最新发布为准','footer.l3':'中央气象台／中国天气网／恩施州气象台'
+    }
+  };
+
+  var weatherMap = {
+    'zh-TW':['陣雨','中雨→大雨','大雨','陣雨','陣雨','陰','陰','小雨','小雨','小雨','小雨','陰','小雨','小雨','小雨'],
+    'zh-CN':['阵雨','中雨→大雨','大雨','阵雨','阵雨','阴','阴','小雨','小雨','小雨','小雨','阴','小雨','小雨','小雨']
+  };
+
+  var curLang = 'zh-CN';
+
+  function applyLang(lang){
+    curLang = lang;
+    var dict = I18N[lang];
+    var nodes = document.querySelectorAll('[data-i18n]');
+    for(var i=0;i<nodes.length;i++){
+      var key = nodes[i].getAttribute('data-i18n');
+      if(dict[key] !== undefined){
+        nodes[i].innerHTML = dict[key];
+      }
+    }
+    var btns = document.querySelectorAll('.lang-btn');
+    for(var j=0;j<btns.length;j++){
+      if(btns[j].getAttribute('data-lang')===lang){btns[j].classList.add('active');}
+      else{btns[j].classList.remove('active');}
+    }
+    document.documentElement.lang = (lang==='zh-TW')?'zh-Hant':'zh-Hans';
+    if(window.__chart){window.__chart.setOption(buildOption(), true);}
+    if(cachedLive){ renderLive(cachedLive.w, cachedLive.a); renderHourly(cachedLive.w); }
+  }
+
+  function buildOption(){
+    var isTW = (curLang==='zh-TW');
+    /* 動態：優先使用 Open-Meteo 16 天每日預報（日期跟著今天自動走）；無資料時退回寫死預覽 */
+    var labels = ['09/15','09/16','09/17','09/18','09/19','09/20','09/21','09/22','09/23','09/24','09/25','09/26','09/27','09/28','09/29'];
+    var rains = [0,17,24,15,2.6,0,7.4,13.8,1,8.8,23.6,16.3,3.5,9.7,6];
+    var highs = [22,20,21,22,26,31,32,27,28,29,29,29,29,27,24];
+    var lows  = [18,18,19,21,21,22,23,22,22,23,25,23,23,20,20];
+    var wcodes = [3,61,63,61,80,3,51,61,61,80,63,61,61,80,61];
+    if(cachedLive && cachedLive.w && cachedLive.w.daily && cachedLive.w.daily.time && cachedLive.w.daily.time.length>=15){
+      var dd = cachedLive.w.daily;
+      labels=[]; rains=[]; highs=[]; lows=[]; wcodes=[];
+      for(var di=0; di<15 && di<dd.time.length; di++){
+        var dt = new Date(dd.time[di]+'T00:00:00Z');
+        labels.push((dt.getUTCMonth()+1)+'/'+dt.getUTCDate());
+        rains.push(dd.precipitation_sum && dd.precipitation_sum[di]!=null ? dd.precipitation_sum[di] : 0);
+        highs.push(dd.temperature_2m_max && dd.temperature_2m_max[di]!=null ? dd.temperature_2m_max[di] : null);
+        lows.push(dd.temperature_2m_min && dd.temperature_2m_min[di]!=null ? dd.temperature_2m_min[di] : null);
+        wcodes.push(dd.weather_code[di]);
+      }
+    }
+    return {
+      backgroundColor:'transparent',
+      tooltip:{
+        trigger:'axis',
+        triggerOn:'mousemove|click',
+        renderMode:'richText',
+        confine:true,
+        formatter:function(params){
+          if(!params || params.length===0) return '';
+          var idx = params[0].dataIndex;
+          var wtxt = wmoText(wcodes[idx]);
+          var rainN = isTW?'降水量':'降水量';
+          var s = '<b>' + labels[idx] + ' · ' + wtxt + '</b><br/>';
+          for(var j=0;j<params.length;j++){
+            var v = params[j].value;
+            var txt = (v===null||v===undefined)?'—':v;
+            s += params[j].marker + params[j].seriesName + '：' + txt + (params[j].seriesName===rainN?' mm':' °C') + '<br/>';
+          }
+          return s;
+        }
+      },
+      legend:{top:0,data:[(isTW?'降水量':'降水量'),(isTW?'最高氣溫':'最高气温'),(isTW?'最低氣溫':'最低气温')],textStyle:{fontSize:12,color:'#86868b'},itemWidth:14,itemHeight:8,icon:'roundRect'},
+      grid:{left:46,right:46,top:34,bottom:28,containLabel:true},
+      xAxis:{type:'category',data:labels,axisLabel:{fontSize:11,interval:0,rotate:35,hideOverlap:true,color:'#86868b'},axisLine:{lineStyle:{color:'#e5e5ea'}},axisTick:{show:false}},
+      yAxis:[
+        {type:'value',name:'mm',nameTextStyle:{fontSize:11,color:'#86868b'},axisLabel:{fontSize:11,color:'#86868b'},splitLine:{lineStyle:{color:'#f0f0f3',type:'dashed'}}},
+        {type:'value',name:'°C',nameTextStyle:{fontSize:11,color:'#86868b'},axisLabel:{fontSize:11,color:'#86868b'},splitLine:{show:false}}
+      ],
+      series:[
+        {name:(isTW?'降水量':'降水量'),type:'bar',yAxisIndex:0,data:rains,barWidth:14,itemStyle:{color:'#0071e3',borderRadius:[4,4,0,0],opacity:.85},label:{show:true,position:'top',fontSize:10,color:'#86868b',formatter:function(p){return p.value>=5?p.value+'mm':'';}}},
+        {name:(isTW?'最高氣溫':'最高气温'),type:'line',yAxisIndex:1,data:highs,smooth:true,lineStyle:{width:2.5,color:'#ff9500'},itemStyle:{color:'#ff9500'},symbol:'circle',symbolSize:5,showSymbol:false},
+        {name:(isTW?'最低氣溫':'最低气温'),type:'line',yAxisIndex:1,data:lows,smooth:true,lineStyle:{width:2.5,color:'#0071e3'},itemStyle:{color:'#0071e3'},symbol:'circle',symbolSize:5,showSymbol:false}
+      ]
+    };
+  }
+
+  var el = document.getElementById('trend');
+  if(el && typeof echarts!=='undefined'){
+    window.__chart = echarts.init(el);
+    window.__chart.setOption(buildOption());
+    window.addEventListener('resize',function(){ if(window.__chart){window.__chart.resize();} });
+  }
+
+  var btns = document.querySelectorAll('.lang-btn');
+  for(var k=0;k<btns.length;k++){
+    btns[k].addEventListener('click',function(){
+      applyLang(this.getAttribute('data-lang'));
+    });
+  }
+
+  /* URL hash 初始化語言：預設簡體中文；index.html#zh-TW 可指定繁體 */
+  var init = (location.hash||'').replace('#','');
+  applyLang(init==='zh-TW' ? 'zh-TW' : 'zh-CN');
+  window.addEventListener('hashchange',function(){
+    var h=(location.hash||'').replace('#','');
+    if(h==='zh-CN' || h==='zh-TW'){ applyLang(h); }
+  });
+
+  /* ===== 即時更新（Open-Meteo）===== */
+  var LAT = 30.291899, LON = 109.511924; /* 湖北恩施學院（恩施市金龍大道118號） */
+  var WMOCodes = {
+    'zh-TW':{0:'晴',1:'大致晴朗',2:'多雲',3:'陰天',45:'霧',48:'霧凇',51:'毛毛雨',53:'毛毛雨',55:'毛毛雨',56:'凍雨',57:'凍雨',61:'小雨',63:'中雨',65:'大雨',66:'凍雨',67:'凍雨',71:'小雪',73:'中雪',75:'大雪',77:'雪粒',80:'陣雨',81:'陣雨',82:'強陣雨',85:'陣雪',86:'強陣雪',95:'雷雨',96:'雷雨伴冰雹',99:'雷雨伴冰雹'},
+    'zh-CN':{0:'晴',1:'大致晴朗',2:'多云',3:'阴天',45:'雾',48:'雾凇',51:'毛毛雨',53:'毛毛雨',55:'毛毛雨',56:'冻雨',57:'冻雨',61:'小雨',63:'中雨',65:'大雨',66:'冻雨',67:'冻雨',71:'小雪',73:'中雪',75:'大雪',77:'雪粒',80:'阵雨',81:'阵雨',82:'强阵雨',85:'阵雪',86:'强阵雪',95:'雷雨',96:'雷雨伴冰雹',99:'雷雨伴冰雹'}
+  };
+  var cachedLive = null;
+
+  function wmoText(code){
+    var m = WMOCodes[curLang] || WMOCodes['zh-CN'];
+    return m[code] !== undefined ? m[code] : String(code);
+  }
+
+  function aqiLvl(us){
+    if(us===null||us===undefined) return '';
+    if(us<=50) return (curLang==='zh-TW'?'優':'优');
+    if(us<=100) return (curLang==='zh-TW'?'良':'良');
+    if(us<=150) return (curLang==='zh-TW'?'輕度污染':'轻度污染');
+    if(us<=200) return (curLang==='zh-TW'?'中度污染':'中度污染');
+    return (curLang==='zh-TW'?'重度污染':'重度污染');
+  }
+
+  function pad2(n){return (n<10?'0':'')+n;}
+
+  function windDir(deg){
+    if(deg===null||deg===undefined){ return ''; }
+    var dirs = ['北','北北東','東北','東北東','東','東南東','東南','南南東','南','南南西','西南','西南西','西','西北西','西北','北北西'];
+    var idx = Math.round(deg/22.5)%16;
+    return dirs[idx];
+  }
+
+  function fmtTime(d){
+    /* 以恩施本地時間（UTC+8）顯示，避免依賴瀏覽器時區 */
+    var h=(d.getUTCHours()+8)%24, m=d.getUTCMinutes();
+    return d.getUTCFullYear()+'-'+pad2(d.getUTCMonth()+1)+'-'+pad2(d.getUTCDate())+' '+pad2(h)+':'+pad2(m);
+  }
+
+  function renderHourly(data){
+    var strip = document.getElementById('hourlyStrip');
+    if(!strip || !data || !data.hourly){ return; }
+    var h = data.hourly;
+    if(!h.time || h.time.length===0){ return; }
+    var nowMs = Date.now();
+    /* 恩施今天日期（UTC+8），只顯示到今天結束 */
+    var todayD = new Date(nowMs + 8*3600*1000);
+    var todayStr = todayD.getUTCFullYear()+'-'+pad2(todayD.getUTCMonth()+1)+'-'+pad2(todayD.getUTCDate());
+    var html = '';
+    var nCells = 0;
+    var RAIN_CODES = [51,53,55,56,57,61,63,65,66,67,80,81,82,95,96,99];
+    for(var i=0;i<h.time.length;i++){
+      var t = new Date(h.time[i]+'+08:00');
+      var ms = t.getTime();
+      if(ms < nowMs - 1800000){ continue; } /* 跳過已過去的時段 */
+      /* 以恩施日期（UTC+8）判斷是否仍是今天 */
+      var t8 = new Date(ms + 8*3600*1000);
+      var dayStr = t8.getUTCFullYear()+'-'+pad2(t8.getUTCMonth()+1)+'-'+pad2(t8.getUTCDate());
+      if(dayStr !== todayStr){ break; } /* 只顯示到今天結束（23:00 為最後一格，24:00＝次日 00:00 歸明天） */
+      var code = h.weather_code ? h.weather_code[i] : null;
+      var rain = h.precipitation_probability ? h.precipitation_probability[i] : null;
+      var isRain = (rain!==null && rain>=40) || (code!==null && RAIN_CODES.indexOf(code)>=0);
+      var isNow = (ms>=nowMs-1800000 && ms<=nowMs+1800000);
+      var cls = 'hour-cell';
+      if(isRain){ cls+=' rainy'; }
+      if(isNow){ cls+=' now'; }
+      var hh = pad2((t.getUTCHours()+8)%24)+':00';
+      var temp = h.temperature_2m ? h.temperature_2m[i] : null;
+      var tmpTxt = (temp===null||temp===undefined)?'—':Math.round(temp);
+      var rainTxt = (rain===null||rain===undefined)?'—':Math.round(rain)+'%';
+      var rainCls = (rain!==null && rain>=40)?'hp rain':'hp dry';
+      var wmo = (code===null||code===undefined)?'':wmoText(code);
+      html += '<div class="'+cls+'">'+
+        '<div class="hh">'+hh+'</div>'+
+        '<div class="hw">'+wmo+'</div>'+
+        '<div class="ht">'+tmpTxt+'°</div>'+
+        '<div class="'+rainCls+'">'+rainTxt+'</div></div>';
+      nCells++;
+    }
+    if(html){ strip.innerHTML = html; }
+    else { strip.innerHTML = '<div style="color:#86868b;font-size:13px;padding:12px 8px;">'+(curLang==='zh-TW'?'今日時段已結束，明天見':'今日时段已结束，明天见')+'</div>'; }
+    /* 格子很少（不需滑動）時，隱藏滑動提示與右緣漸隱 */
+    var sc = strip.parentNode;
+    var swipe = document.querySelector('.live-hourly .hdr .swipe');
+    if(sc && sc.scrollWidth <= sc.clientWidth + 2){
+      sc.style.webkitMaskImage='none'; sc.style.maskImage='none';
+      if(swipe){ swipe.style.display='none'; }
+    }
+  }
+
+  function renderLive(data, air){
+    var isTW = (curLang==='zh-TW');
+    var up = document.getElementById('liveUptime');
+    if(up){ up.textContent = fmtTime(new Date()); }
+    var hu = document.getElementById('heroUptime');
+    if(hu){
+      var n2 = new Date();
+      hu.textContent = pad2((n2.getUTCHours()+8)%24)+':'+pad2(n2.getUTCMinutes());
+    }
+    if(data && data.current){
+      var c = data.current;
+      var setTxt = function(id,v){ var el=document.getElementById(id); if(el && v!==null && v!==undefined){ el.textContent=v; } };
+      setTxt('liveTemp', c.temperature_2m);
+      setTxt('liveWeather', wmoText(c.weather_code));
+      setTxt('liveHum', c.relative_humidity_2m);
+      setTxt('liveWind', Math.round(c.wind_speed_10m*10)/10);
+      /* 頂部 hero 大數字與統計同步接上即時資料 */
+      setTxt('heroTemp', Math.round(c.temperature_2m));
+      setTxt('heroWeather', wmoText(c.weather_code));
+      setTxt('heroHum', Math.round(c.relative_humidity_2m)+'%');
+      if(c.apparent_temperature!==undefined){ setTxt('heroFeel', Math.round(c.apparent_temperature*10)/10+'°C'); }
+      setTxt('heroWind', windDir(c.wind_direction_10m));
+    }
+    if(air && air.current){
+      var a = air.current;
+      var eAqi=document.getElementById('liveAqi'), eLvl=document.getElementById('liveAqiLvl'), ePm=document.getElementById('livePm');
+      if(eAqi && a.us_aqi!==undefined){ eAqi.textContent=Math.round(a.us_aqi); }
+      if(eLvl){ eLvl.textContent = aqiLvl(a.us_aqi); }
+      if(ePm && a.pm2_5!==undefined){ ePm.textContent = Math.round(a.pm2_5*10)/10; }
+      if(a.us_aqi!==undefined){ setTxt('heroAqi', aqiLvl(a.us_aqi)); }
+    }
+    if(data && data.daily && data.daily.sunrise && data.daily.sunset){
+      var sr = data.daily.sunrise[0], ss = data.daily.sunset[0];
+      if(sr){ setTxt('heroRise', String(sr).slice(11,16)); }
+      if(ss){ setTxt('heroSet', String(ss).slice(11,16)); }
+    }
+    var tb = document.getElementById('live7d');
+    if(tb && data && data.daily){
+      var d = data.daily;
+      var days = ['日','一','二','三','四','五','六'];
+      var rows = '';
+      for(var i=0;i<d.time.length && i<7;i++){
+        var dt = new Date(d.time[i]+'T00:00:00Z');
+        var lbl = (dt.getUTCMonth()+1)+'/'+dt.getUTCDate();
+        var dow = (curLang==='zh-TW'?'週':'周') + days[dt.getUTCDay()];
+        var pr = d.precipitation_probability_max ? d.precipitation_probability_max[i] : null;
+        var hasW = d.weather_code && d.weather_code[i]!==undefined && d.weather_code[i]!==null;
+        var hasMax = d.temperature_2m_max && d.temperature_2m_max[i]!==undefined && d.temperature_2m_max[i]!==null;
+        var hasMin = d.temperature_2m_min && d.temperature_2m_min[i]!==undefined && d.temperature_2m_min[i]!==null;
+        var hasSum = d.precipitation_sum && d.precipitation_sum[i]!==undefined && d.precipitation_sum[i]!==null;
+        rows += '<tr><td class="d">'+lbl+'<span style="font-size:10.5px;display:block;">'+dow+'</span></td>'+
+          '<td>'+(hasW?wmoText(d.weather_code[i]):'—')+'</td>'+
+          '<td>'+(hasMax?d.temperature_2m_max[i]+'°C':'—')+'</td>'+
+          '<td>'+(hasMin?d.temperature_2m_min[i]+'°C':'—')+'</td>'+
+          '<td>'+(hasSum?d.precipitation_sum[i]+' mm':'—')+'</td>'+
+          '<td class="pr">'+(pr===null||pr===undefined?'—':pr+'%')+'</td></tr>';
+      }
+      tb.innerHTML = rows;
+    }
+    /* 日期跟著今天：重繪 15 天趨勢圖、生活建議表與 7 天對照表 */
+    updateTrend();
+    renderAdviceTable();
+    renderCompareTable();
+    var fail=document.getElementById('liveFail');
+    if(fail){ fail.style.display='none'; }
+  }
+
+  /* 依即時每日資料動態生成生活建議表（前 4 天，日期跟著今天） */
+  function renderAdviceTable(){
+    var tb = document.getElementById('adviceBody');
+    if(!tb || !cachedLive || !cachedLive.w || !cachedLive.w.daily) return;
+    var d = cachedLive.w.daily;
+    if(!d.time || d.time.length<4) return;
+    var isTW = (curLang==='zh-TW');
+    var days = ['日','一','二','三','四','五','六'];
+    var todayLbl = (I18N[curLang] && I18N[curLang]['adv.today']) || '今天';
+    var rows='';
+    var todayAqi = cachedLive.a && cachedLive.a.current ? cachedLive.a.current.us_aqi : null;
+    for(var i=0;i<4 && i<d.time.length;i++){
+      var dt = new Date(d.time[i]+'T00:00:00Z');
+      var mmdd = (dt.getUTCMonth()+1)+'/'+dt.getUTCDate();
+      var dow = (isTW?'週':'周') + days[dt.getUTCDay()];
+      var dowTxt = (i===0)? todayLbl : dow;
+      var mx = d.temperature_2m_max[i], prob = d.precipitation_probability_max ? d.precipitation_probability_max[i] : 0;
+      var sum = d.precipitation_sum ? d.precipitation_sum[i] : 0;
+      var code = d.weather_code[i];
+      var dress;
+      if(mx<15) dress = isTW?'厚外套，注意保暖':'厚外套，注意保暖';
+      else if(mx<20) dress = isTW?'薄外套＋長袖':'薄外套＋长袖';
+      else if(mx<26) dress = isTW?'長袖或薄外套':'长袖或薄外套';
+      else dress = isTW?'短袖，可備薄長袖':'短袖，可备薄长袖';
+      var umb;
+      if(prob>=50 || sum>=10) umb = isTW?'必帶雨傘／雨衣':'必带雨伞／雨衣';
+      else if(prob>=30 || sum>=3) umb = isTW?'隨身帶傘':'随身带伞';
+      else umb = isTW?'基本不需':'基本不需';
+      var mask = (todayAqi!==null && todayAqi!==undefined && todayAqi>100) ? (isTW?'建議佩戴':'建议佩戴') : (isTW?'一般不需':'一般不需');
+      var sun = (code!==null && (code===0||code===1||code===2)) ? (isTW?'建議 SPF 15+':'建议 SPF 15+') : (isTW?'紫外線弱':'紫外线弱');
+      rows += '<tr><td><span class="d">'+mmdd+'</span><span class="wd">'+dowTxt+'</span></td>'+
+        '<td>'+dress+'</td><td>'+umb+'</td><td>'+mask+'</td><td>'+sun+'</td></tr>';
+    }
+    tb.innerHTML = rows;
+  }
+
+  /* 7 天對照表：永遠從今天起 7 天，用 Open-Meteo 即時 daily 渲染 */
+  function renderCompareTable(){
+    var tb = document.getElementById('cmpBody');
+    if(!tb || !cachedLive || !cachedLive.w || !cachedLive.w.daily) return;
+    var d = cachedLive.w.daily;
+    if(!d.time || d.time.length<7) return;
+    var isTW = (curLang==='zh-TW');
+    var days = ['日','一','二','三','四','五','六'];
+    var todayLbl = (I18N[curLang] && I18N[curLang]['cmp.today']) || (isTW?'今天':'今天');
+    var rows='';
+    for(var i=0;i<7 && i<d.time.length;i++){
+      var dt = new Date(d.time[i]+'T00:00:00Z');
+      var mmdd = (dt.getUTCMonth()+1)+'/'+dt.getUTCDate();
+      var dow = (isTW?'週':'周') + days[dt.getUTCDay()];
+      var dowTxt = (i===0)? todayLbl : dow;
+      var w = (d.weather_code && d.weather_code[i]!==undefined) ? wmoText(d.weather_code[i]) : '—';
+      var mx = d.temperature_2m_max ? d.temperature_2m_max[i]+'°C' : '—';
+      var mn = d.temperature_2m_min ? d.temperature_2m_min[i]+'°C' : '—';
+      var pr = d.precipitation_probability_max ? d.precipitation_probability_max[i]+'%' : '—';
+      var sm = d.precipitation_sum ? d.precipitation_sum[i]+' mm' : '—';
+      rows += '<tr'+(i===0?' class="row-today"':'')+'>'+
+        '<td><span class="d">'+mmdd+'</span><span class="wd">'+dowTxt+'</span></td>'+
+        '<td><span class="w">'+w+'</span></td>'+
+        '<td><span class="t">'+mx+' / '+mn+'</span></td>'+
+        '<td class="pr">'+pr+'</td>'+
+        '<td><span class="t">'+sm+'</span></td></tr>';
+    }
+    tb.innerHTML = rows;
+  }
+
+  function updateTrend(){
+    if(window.__chart){ window.__chart.setOption(buildOption(), true); }
+  }
+
+  function showLiveFail(msg){
+    var fail=document.getElementById('liveFail');
+    if(fail){
+      var dict=I18N[curLang]||I18N['zh-CN'];
+      fail.textContent = msg || dict['live.fail'] || '即時資料暫時無法取得。';
+      fail.style.display='block';
+    }
+  }
+
+  var fetching = false;
+  /* 可橫向滑動表格的右緣漸隱提示：還有內容時顯示，滑到底自動消失 */
+  function updateTblMasks(){
+    var els = document.querySelectorAll('.tbl-scroll');
+    for(var i=0;i<els.length;i++){
+      var el = els[i];
+      var remaining = el.scrollWidth - el.clientWidth - el.scrollLeft;
+      if(remaining > 12){ el.classList.add('edge'); }
+      else{ el.classList.remove('edge'); }
+    }
+  }
+  window.addEventListener('resize', updateTblMasks);
+  document.addEventListener('scroll', function(){ updateTblMasks(); }, true);
+  setInterval(updateTblMasks, 2000);
+  updateTblMasks();
+
+  function fetchLive(){
+    if(fetching){ return; } /* 避免請求重疊 */
+    fetching = true;
+    var urlW = 'https://api.open-meteo.com/v1/forecast?latitude='+LAT+'&longitude='+LON+
+      '&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m'+
+      '&hourly=temperature_2m,weather_code,precipitation_probability'+
+      '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,sunrise,sunset'+
+      '&timezone=Asia%2FShanghai&forecast_days=16';
+    var urlA = 'https://air-quality-api.open-meteo.com/v1/air-quality?latitude='+LAT+'&longitude='+LON+
+      '&current=pm2_5,us_aqi&timezone=Asia%2FShanghai';
+    Promise.all([
+      fetch(urlW).then(function(r){return r.json();}).catch(function(){return null;}),
+      fetch(urlA).then(function(r){return r.json();}).catch(function(){return null;})
+    ]).then(function(res){
+      fetching = false;
+      var w=res[0], a=res[1];
+      if(!w && !a){ showLiveFail(); return; }
+      cachedLive = {w:w, a:a};
+      renderLive(w, a);
+      renderHourly(w);
+      updateTblMasks();
+    });
+  }
+
+  fetchLive();
+  setInterval(fetchLive, 15*60*1000);
+})();
+</script>
+</body>
+</html>
