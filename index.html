@@ -17,7 +17,7 @@
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
   html{scroll-behavior:smooth;}
   body{font-family:-apple-system,'SF Pro Display','SF Pro Text','PingFang TC','PingFang SC','Noto Sans TC',sans-serif;
-    background:transparent;color:var(--ink);line-height:1.5;letter-spacing:-.01em;
+    background:transparent;color:#fff;line-height:1.5;letter-spacing:-.01em;
     -webkit-font-smoothing:antialiased;padding-bottom:40px;}
   #bgCanvas{position:fixed;inset:0;z-index:0;pointer-events:none;}
   .wrap{max-width:720px;margin:0 auto;padding:0 18px;position:relative;z-index:1;}
@@ -34,7 +34,7 @@
   .meta-row b{color:#fff;font-weight:600;}
   .lang-switch{position:fixed;top:14px;right:14px;display:flex;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);
     border-radius:999px;padding:3px;gap:2px;box-shadow:0 2px 12px rgba(0,0,0,.08);z-index:100;}
-  .lang-btn{border:0;background:transparent;color:var(--sub);font-family:inherit;font-size:12px;font-weight:500;padding:5px 12px;border-radius:999px;cursor:pointer;}
+  .lang-btn{border:0;background:rgba(255,255,255,.15);color:#fff;font-family:inherit;font-size:12px;font-weight:500;padding:5px 12px;border-radius:999px;cursor:pointer;}
   .lang-btn.active{background:var(--ink);color:#fff;}
   .card{background:rgba(255,255,255,.25);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border-radius:16px;padding:16px;margin-top:10px;border:1px solid rgba(255,255,255,.2);box-shadow:var(--shadow);}
   .card-title{font-size:11px;font-weight:600;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;}
@@ -65,7 +65,7 @@
   #trend{width:100%;height:320px;}
   .aqi-hero{display:flex;align-items:center;gap:18px;}
   .aqi-num{font-size:48px;font-weight:700;line-height:1;color:#fff;letter-spacing:-.03em;}
-  .aqi-lvl{font-size:16px;font-weight:600;color:var(--green);margin-top:4px;}
+  .aqi-lvl{font-size:16px;font-weight:600;color:#30d158;margin-top:4px;}
   .aqi-bar{flex:1;height:8px;border-radius:4px;background:linear-gradient(90deg,#30d158,#ffd60a,#ff9500,#ff453a);margin-top:10px;}
   .aqi-dots{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;}
   .ad{background:rgba(255,255,255,.12);border-radius:12px;padding:10px 12px;}
@@ -267,7 +267,7 @@
     var d=cachedLive&&cachedLive.w&&cachedLive.w.daily;
     var labels=[],rains=[],highs=[],lows=[];
     if(d&&d.time){for(var i=0;i<15&&i<d.time.length;i++){var dt=new Date(d.time[i]+'T00:00:00Z');labels.push(pad(dt.getUTCMonth()+1)+'/'+pad(dt.getUTCDate()));rains.push(d.precipitation_sum[i]||0);highs.push(d.temperature_2m_max[i]);lows.push(d.temperature_2m_min[i]);}}
-    return{backgroundColor:'transparent',tooltip:{trigger:'axis',triggerOn:'mousemove|click',renderMode:'richText',confine:true},grid:{left:10,right:10,top:30,bottom:20,containLabel:true},xAxis:{type:'category',data:labels,axisLabel:{fontSize:10,color:'#86868b'},axisLine:{lineStyle:{color:'#e5e5ea'}},axisTick:{show:false}},yAxis:[{type:'value',axisLabel:{fontSize:10,color:'#86868b'},splitLine:{lineStyle:{color:'#f0f0f3'}},show:false},{type:'value',axisLabel:{fontSize:10,color:'#86868b'},splitLine:{show:false}}],series:[{name:'降水',type:'bar',yAxisIndex:0,data:rains,barWidth:10,itemStyle:{color:'#0071e3',borderRadius:[3,3,0,0],opacity:.8}},{name:'最高温',type:'line',yAxisIndex:1,data:highs,smooth:true,lineStyle:{width:2.5,color:'#ff9500'},symbol:'circle',symbolSize:4,showSymbol:false},{name:'最低温',type:'line',yAxisIndex:1,data:lows,smooth:true,lineStyle:{width:2.5,color:'#0071e3'},symbol:'circle',symbolSize:4,showSymbol:false}]};
+    return{backgroundColor:'transparent',tooltip:{trigger:'axis',triggerOn:'mousemove|click',renderMode:'richText',confine:true},grid:{left:10,right:10,top:30,bottom:20,containLabel:true},xAxis:{type:'category',data:labels,axisLabel:{fontSize:10,color:'rgba(255,255,255,.6)'},axisLine:{lineStyle:{color:'rgba(255,255,255,.2)'}},axisTick:{show:false}},yAxis:[{type:'value',axisLabel:{fontSize:10,color:'rgba(255,255,255,.6)'},splitLine:{lineStyle:{color:'rgba(255,255,255,.1)'}},show:false},{type:'value',axisLabel:{fontSize:10,color:'rgba(255,255,255,.6)'},splitLine:{show:false}}],series:[{name:'降水',type:'bar',yAxisIndex:0,data:rains,barWidth:10,itemStyle:{color:'#0071e3',borderRadius:[3,3,0,0],opacity:.8}},{name:'最高温',type:'line',yAxisIndex:1,data:highs,smooth:true,lineStyle:{width:2.5,color:'#ff9500'},symbol:'circle',symbolSize:4,showSymbol:false},{name:'最低温',type:'line',yAxisIndex:1,data:lows,smooth:true,lineStyle:{width:2.5,color:'#0071e3'},symbol:'circle',symbolSize:4,showSymbol:false}]};
   }
   function fetchAll(){
     var url='https://api.open-meteo.com/v1/forecast?latitude='+LAT+'&longitude='+LON+'&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m&hourly=temperature_2m,weather_code,precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max&timezone=Asia%2FShanghai&forecast_days=16';
