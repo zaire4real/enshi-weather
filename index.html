@@ -232,11 +232,11 @@
     var h=w.hourly,nowMs=Date.now(),todayStr=(function(){var x=new Date(nowMs+8*3600e3);return x.getUTCFullYear()+'-'+pad(x.getUTCMonth()+1)+'-'+pad(x.getUTCDate());})();
     var html='';
     for(var i=0;i<h.time.length;i++){
-      var t=new Date(h.time[i]+'+08:00'),ms=t.getTime();
+      var hd=new Date(h.time[i]+'+08:00'),ms=hd.getTime();
       if(ms<nowMs-30*60e3)continue;
       var t8=new Date(ms+8*3600e3);
       if((t8.getUTCFullYear()+'-'+pad(t8.getUTCMonth()+1)+'-'+pad(t8.getUTCDate()))!==todayStr)break;
-      var hh=pad((t.getUTCHours()+8)%24);
+      var hh=pad((hd.getUTCHours()+8)%24);
       var now=Math.abs(ms-nowMs)<30*60e3;
       html+='<div class="h'+(now?' now':'')+'"><div class="hh">'+(now?t('now'):hh+':00')+'</div><div class="hi">'+icon(h.weather_code[i])+'</div><div class="ht">'+Math.round(h.temperature_2m[i])+'°</div><div class="hp">'+(h.precipitation_probability[i]||0)+'%</div></div>';
     }
