@@ -36,55 +36,55 @@
     border-radius:999px;padding:3px;gap:2px;box-shadow:0 2px 12px rgba(0,0,0,.08);z-index:100;}
   .lang-btn{border:0;background:transparent;color:var(--sub);font-family:inherit;font-size:12px;font-weight:500;padding:5px 12px;border-radius:999px;cursor:pointer;}
   .lang-btn.active{background:var(--ink);color:#fff;}
-  .card{background:rgba(255,255,255,.92);backdrop-filter:blur(20px);border-radius:20px;padding:16px;margin-top:10px;box-shadow:var(--shadow);}
-  .card-title{font-size:11px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;}
+  .card{background:rgba(255,255,255,.18);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border-radius:20px;padding:16px;margin-top:10px;border:1px solid rgba(255,255,255,.2);box-shadow:var(--shadow);}
+  .card-title{font-size:11px;font-weight:600;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;}
   .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
   @media(min-width:520px){.grid{grid-template-columns:repeat(3,1fr);}}
-  .g{background:rgba(142,142,147,.1);border-radius:12px;padding:10px 12px;}
-  .g .k{font-size:12px;color:var(--sub);font-weight:500;margin-bottom:4px;}
-  .g .v{font-size:20px;font-weight:600;color:var(--ink);letter-spacing:-.02em;}
-  .g .v small{font-size:12px;color:var(--sub);font-weight:400;margin-left:2px;}
+  .g{background:rgba(255,255,255,.12);border-radius:12px;padding:10px 12px;}
+  .g .k{font-size:11px;color:rgba(255,255,255,.7);font-weight:500;margin-bottom:4px;}
+  .g .v{font-size:20px;font-weight:600;color:#fff;letter-spacing:-.02em;}
+  .g .v small{font-size:12px;color:rgba(255,255,255,.7);font-weight:400;margin-left:2px;}
   .hour-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:0 -20px;padding:0 20px;}
   .hour-scroll::-webkit-scrollbar{display:none;}
   .hour-row{display:flex;width:max-content;}
-  .h{flex:0 0 64px;text-align:center;padding:6px 4px;border-right:1px solid var(--line);}
+  .h{flex:0 0 64px;text-align:center;padding:6px 4px;border-right:1px solid rgba(255,255,255,.15);}
   .h:last-child{border-right:0;}
-  .h .hh{font-size:12px;color:var(--sub);font-weight:500;}
+  .h .hh{font-size:12px;color:rgba(255,255,255,.7);font-weight:500;}
   .h .hi{font-size:22px;margin:8px 0;}
-  .h .ht{font-size:15px;font-weight:600;color:var(--ink);}
-  .h .hp{font-size:11px;color:var(--blue);font-weight:600;margin-top:4px;}
-  .h.now .hh{color:var(--blue);font-weight:700;}
-  .h.now{background:rgba(0,113,227,.06);border-radius:10px;}
-  .drow{display:flex;align-items:center;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px;}
+  .h .ht{font-size:15px;font-weight:600;color:#fff;}
+  .h .hp{font-size:11px;color:#fff;font-weight:600;margin-top:4px;opacity:.8;}
+  .h.now .hh{color:#fff;font-weight:700;}
+  .h.now{background:rgba(255,255,255,.15);border-radius:10px;}
+  .drow{display:flex;align-items:center;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.15);font-size:14px;}
   .drow:last-child{border-bottom:0;}
-  .drow .day{flex:0 0 56px;font-weight:500;color:var(--ink);}
+  .drow .day{flex:0 0 56px;font-weight:500;color:#fff;}
   .drow .ico{flex:0 0 36px;text-align:center;font-size:18px;}
-  .drow .lo{flex:0 0 34px;text-align:right;color:var(--sub);font-weight:500;}
+  .drow .lo{flex:0 0 34px;text-align:right;color:rgba(255,255,255,.7);font-weight:500;}
   .drow .bar{flex:1;height:4px;border-radius:2px;background:linear-gradient(90deg,#5ac8fa,#ffcc00,#ff9500);}
-  .drow .hi{flex:0 0 34px;text-align:right;font-weight:600;color:var(--ink);}
+  .drow .hi{flex:0 0 34px;text-align:right;font-weight:600;color:#fff;}
   #trend{width:100%;height:320px;}
   .aqi-hero{display:flex;align-items:center;gap:18px;}
-  .aqi-num{font-size:48px;font-weight:700;line-height:1;color:var(--ink);letter-spacing:-.03em;}
+  .aqi-num{font-size:48px;font-weight:700;line-height:1;color:#fff;letter-spacing:-.03em;}
   .aqi-lvl{font-size:16px;font-weight:600;color:var(--green);margin-top:4px;}
   .aqi-bar{flex:1;height:8px;border-radius:4px;background:linear-gradient(90deg,#30d158,#ffd60a,#ff9500,#ff453a);margin-top:10px;}
   .aqi-dots{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;}
-  .ad{background:#f5f5f7;border-radius:12px;padding:10px 12px;}
-  .ad .k{font-size:11.5px;color:var(--sub);}
-  .ad .v{font-size:15px;font-weight:600;margin-top:2px;}
+  .ad{background:rgba(255,255,255,.12);border-radius:12px;padding:10px 12px;}
+  .ad .k{font-size:11.5px;color:rgba(255,255,255,.7);}
+  .ad .v{font-size:15px;font-weight:600;color:#fff;margin-top:2px;}
   .life{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
-  .lc{background:#f5f5f7;border-radius:14px;padding:14px;}
-  .lc .t{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px;}
-  .lc .d{font-size:12px;color:var(--sub);line-height:1.5;}
-  .alert{background:linear-gradient(135deg,#fff8e6,#ffefb8);border-radius:var(--r);padding:18px 20px;margin-top:14px;}
-  .alert h3{font-size:15px;font-weight:600;color:#92400e;margin-bottom:8px;}
+  .lc{background:rgba(255,255,255,.12);border-radius:14px;padding:14px;}
+  .lc .t{font-size:13px;font-weight:600;color:#fff;margin-bottom:4px;}
+  .lc .d{font-size:12px;color:rgba(255,255,255,.8);line-height:1.5;}
+  .alert{background:rgba(255,214,10,.15);backdrop-filter:blur(20px);border-radius:20px;padding:16px 18px;margin-top:10px;border:1px solid rgba(255,214,10,.3);
+  .alert h3{font-size:15px;font-weight:600;color:#ffd60a;margin-bottom:8px;}
   .alert ul{margin-left:18px;}
-  .alert li{font-size:13.5px;color:#6b4a0e;margin-bottom:4px;line-height:1.6;}
-  .alert li b{color:#92400e;}
+  .alert li{font-size:13.5px;color:rgba(255,255,255,.9);margin-bottom:4px;line-height:1.6;}
+  .alert li b{color:#ffd60a;}
   .src-list{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
-  .si{background:#f5f5f7;border-radius:12px;padding:12px 14px;font-size:12px;}
-  .si .n{font-weight:600;color:var(--ink);font-size:12.5px;}
-  .si p{color:var(--sub);margin-top:2px;font-size:11.5px;}
-  footer{text-align:center;font-size:11.5px;color:var(--sub);margin-top:28px;line-height:1.7;}
+  .si{background:rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;font-size:12px;}
+  .si .n{font-weight:600;color:#fff;font-size:12.5px;}
+  .si p{color:rgba(255,255,255,.7);margin-top:2px;font-size:11.5px;}
+  footer{text-align:center;font-size:11.5px;color:rgba(255,255,255,.7);margin-top:24px;line-height:1.7;}
   .live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:5px;vertical-align:1px;}
 </style>
 </head>
@@ -120,11 +120,11 @@
   </div>
   <div class="card">
     <div class="card-title" data-i18n="hourly">每小时</div>
-    <div class="hour-scroll"><div class="hour-row" id="hourlyStrip"><div style="color:#86868b;font-size:13px;padding:14px;" data-i18n="loading">加载中…</div></div></div>
+    <div class="hour-scroll"><div class="hour-row" id="hourlyStrip"><div style="color:rgba(255,255,255,.7);font-size:13px;padding:14px;" data-i18n="loading">加载中…</div></div></div>
   </div>
   <div class="card">
     <div class="card-title" data-i18n="week">7 天预报</div>
-    <div id="weekList"><div style="color:#86868b;font-size:13px;padding:14px;" data-i18n="loading">加载中…</div></div>
+    <div id="weekList"><div style="color:rgba(255,255,255,.7);font-size:13px;padding:14px;" data-i18n="loading">加载中…</div></div>
   </div>
   <div class="card">
     <div class="card-title" data-i18n="trend">15 天趋势</div>
@@ -240,7 +240,7 @@
       var now=Math.abs(ms-nowMs)<30*60e3;
       html+='<div class="h'+(now?' now':'')+'"><div class="hh">'+(now?t('now'):hh+':00')+'</div><div class="hi">'+icon(h.weather_code[i])+'</div><div class="ht">'+Math.round(h.temperature_2m[i])+'°</div><div class="hp">'+(h.precipitation_probability[i]||0)+'%</div></div>';
     }
-    set('hourlyStrip',html||'<div style="color:#86868b;font-size:13px;padding:14px;">'+t('done')+'</div>');
+    set('hourlyStrip',html||'<div style="color:rgba(255,255,255,.7);font-size:13px;padding:14px;">'+t('done')+'</div>');
     var days=['日','一','二','三','四','五','六'],wl='';
     var allLo=Infinity, allHi=-Infinity;
     for(var i=0;i<7;i++){allLo=Math.min(allLo,d.temperature_2m_min[i]);allHi=Math.max(allHi,d.temperature_2m_max[i]);}
