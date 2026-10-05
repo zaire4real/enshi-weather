@@ -102,7 +102,8 @@ def main():
     s = re.sub(r'\d{2}-\d{2} \d{2}:\d{2} 更新', f'{short} {HH}:{MMi} 更新', s)
 
     if s == orig:
-        print("WARNING: no replacement made", file=sys.stderr); sys.exit(2)
+        print("OK: no changes needed")
+        sys.exit(0)
     open(p, "w", encoding="utf-8").write(s)
     print("OK: index.html updated")
 
