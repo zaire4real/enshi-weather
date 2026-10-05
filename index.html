@@ -227,7 +227,7 @@
       document.getElementById('aqiLvl').style.color=v<=50?'#30d158':(v<=100?'#ffd60a':'#ff9500');
       set('pm25',Math.round(a.current.pm2_5)+' μg');
       set('pm10',Math.round(a.current.pm10||a.current.pm2_5*1.5)+' μg');
-      set('o3',Math.round(a.current.o3||0)+' μg');
+      set('o3',Math.round(a.current.ozone||0)+' μg');
     }
     var h=w.hourly,nowMs=Date.now(),todayStr=(function(){var x=new Date(nowMs+8*3600e3);return x.getUTCFullYear()+'-'+pad(x.getUTCMonth()+1)+'-'+pad(x.getUTCDate());})();
     var html='';
@@ -266,7 +266,7 @@
   }
   function fetchAll(){
     var url='https://api.open-meteo.com/v1/forecast?latitude='+LAT+'&longitude='+LON+'&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m&hourly=temperature_2m,weather_code,precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max&timezone=Asia%2FShanghai&forecast_days=16';
-    var aurl='https://air-quality-api.open-meteo.com/v1/air-quality?latitude='+LAT+'&longitude=109.488&current=pm2_5,us_aqi,pm10,o3&timezone=Asia%2FShanghai';
+    var aurl='https://air-quality-api.open-meteo.com/v1/air-quality?latitude='+LAT+'&longitude=109.488&current=pm2_5,us_aqi,pm10,ozone&timezone=Asia%2FShanghai';
     Promise.all([fetch(url).then(function(r){return r.json();}),fetch(aurl).then(function(r){return r.json();})]).then(function(rs){cachedLive={w:rs[0],a:rs[1]};renderAll(rs[0],rs[1]);}).catch(function(e){console.error(e);});
   }
   var el=document.getElementById('trend');
