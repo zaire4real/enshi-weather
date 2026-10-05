@@ -17,9 +17,11 @@
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
   html{scroll-behavior:smooth;}
   body{font-family:-apple-system,'SF Pro Display','SF Pro Text','PingFang TC','PingFang SC','Noto Sans TC',sans-serif;
-    background:var(--bg);color:var(--ink);line-height:1.5;letter-spacing:-.01em;
+    background:transparent;color:var(--ink);line-height:1.5;letter-spacing:-.01em;
     -webkit-font-smoothing:antialiased;padding-bottom:40px;}
-  .wrap{max-width:720px;margin:0 auto;padding:0 18px;}
+  #bgCanvas{position:fixed;inset:0;z-index:0;pointer-events:none;}
+  .wrap{max-width:720px;margin:0 auto;padding:0 18px;position:relative;z-index:1;}
+  .lang-switch{position:fixed;top:14px;right:14px;z-index:100;}
   .hero{padding:48px 0 28px;text-align:center;}
   .loc{font-size:22px;font-weight:600;color:var(--ink);letter-spacing:-.02em;}
   .loc small{display:block;font-size:13px;color:var(--sub);font-weight:400;margin-top:2px;letter-spacing:0;}
@@ -31,7 +33,7 @@
   .meta-row{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 20px;margin-top:18px;font-size:13px;color:var(--sub);}
   .meta-row b{color:var(--ink);font-weight:600;}
   .lang-switch{position:fixed;top:14px;right:14px;display:flex;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);
-    border-radius:999px;padding:3px;gap:2px;box-shadow:0 2px 12px rgba(0,0,0,.08);z-index:99;}
+    border-radius:999px;padding:3px;gap:2px;box-shadow:0 2px 12px rgba(0,0,0,.08);z-index:100;}
   .lang-btn{border:0;background:transparent;color:var(--sub);font-family:inherit;font-size:12px;font-weight:500;padding:5px 12px;border-radius:999px;cursor:pointer;}
   .lang-btn.active{background:var(--ink);color:#fff;}
   .card{background:var(--card);border-radius:var(--r);padding:20px;margin-top:14px;box-shadow:var(--shadow);}
@@ -87,6 +89,7 @@
 </style>
 </head>
 <body>
+<canvas id="bgCanvas"></canvas>
 <div class="lang-switch">
   <button class="lang-btn" data-lang="zh-TW">繁中</button>
   <button class="lang-btn active" data-lang="zh-CN">简中</button>
@@ -202,6 +205,7 @@
     var c=w.current,d=w.daily;
     set('liveTemp',Math.round(c.temperature_2m));
     set('liveCond',wmo(c.weather_code));
+    if(typeof setScene==='function') setScene(c.weather_code);
     set('liveHi',Math.round(d.temperature_2m_max[0])+'°');
     set('liveLo',Math.round(d.temperature_2m_min[0])+'°');
     set('liveFeels',Math.round(c.apparent_temperature)+'°');
@@ -270,6 +274,87 @@
   fetchAll();
   setInterval(fetchAll,15*60*1000);
   window.addEventListener('resize',function(){if(window.__chart)window.__chart.resize();});
+
+  /* ===== 背景天气动画（Apple 风） ===== */
+  var bg = document.getElementById('bgCanvas');
+  var bctx = bg.getContext('2d');
+  var drops=[], clouds=[], particles=[];
+  var scene = 'clear'; // clear/cloud/rain/snow/storm
+  function resizeBg(){ bg.width=innerWidth*devicePixelRatio; bg.height=innerHeight*devicePixelRatio; bctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0); }
+  resizeBg(); window.addEventListener('resize',resizeBg);
+
+  function setScene(code){
+    if([95,96,99].indexOf(code)>=0) scene='storm';
+    else if([61,63,65,66,67,80,81,82,51,53,55,56,57].indexOf(code)>=0) scene='rain';
+    else if([71,73,75,77,85,86].indexOf(code)>=0) scene='snow';
+    else if(code===3||code===45||code===48) scene='cloud';
+    else if(code===1||code===2) scene='cloud';
+    else scene='clear';
+    drops=[]; clouds=[]; particles=[];
+    if(scene==='rain'||scene==='storm'){
+      var n = scene==='storm'?120:70;
+      for(var i=0;i<n;i++) drops.push({x:Math.random()*innerWidth, y:Math.random()*innerHeight, len:12+Math.random()*14, sp:10+Math.random()*8});
+    }
+    if(scene==='cloud'||scene==='clear'){
+      var cn = scene==='cloud'?6:3;
+      for(var i=0;i<cn;i++) clouds.push({x:Math.random()*innerWidth, y:30+Math.random()*innerHeight*0.4, r:60+Math.random()*80, sp:0.15+Math.random()*0.2, o:0.25+Math.random()*0.2});
+    }
+    if(scene==='snow'){
+      for(var i=0;i<60;i++) particles.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:2+Math.random()*3,sp:0.5+Math.random()*0.8,sw:Math.random()*Math.PI*2});
+    }
+  }
+
+  var bgGrad=null;
+  function drawGrad(){
+    var g=bctx.createLinearGradient(0,0,0,innerHeight);
+    if(scene==='clear'){ g.addColorStop(0,'#aee3ff'); g.addColorStop(1,'#e8f4ff'); }
+    else if(scene==='cloud'){ g.addColorStop(0,'#b8c4d0'); g.addColorStop(1,'#e8ecf0'); }
+    else if(scene==='rain'||scene==='storm'){ g.addColorStop(0,'#5a6c7d'); g.addColorStop(1,'#9aa8b5'); }
+    else if(scene==='snow'){ g.addColorStop(0,'#d8dde3'); g.addColorStop(1,'#eef1f4'); }
+    else { g.addColorStop(0,'#aee3ff'); g.addColorStop(1,'#e8f4ff'); }
+    bctx.fillStyle=g; bctx.fillRect(0,0,innerWidth,innerHeight);
+  }
+
+  function drawCloud(c){
+    bctx.fillStyle='rgba(255,255,255,'+c.o+')';
+    bctx.beginPath();
+    bctx.ellipse(c.x,c.y,c.r,c.r*0.5,0,0,Math.PI*2);
+    bctx.ellipse(c.x+c.r*0.5,c.y+10,c.r*0.7,c.r*0.4,0,0,Math.PI*2);
+    bctx.ellipse(c.x-c.r*0.4,c.y+8,c.r*0.6,c.r*0.35,0,0,Math.PI*2);
+    bctx.fill();
+  }
+
+  function loop(){
+    drawGrad();
+    if(scene==='cloud'||scene==='clear'){
+      for(var i=0;i<clouds.length;i++){
+        var c=clouds[i]; c.x+=c.sp; if(c.x-c.r>innerWidth) c.x=-c.r;
+        drawCloud(c);
+      }
+    }
+    if(scene==='rain'||scene==='storm'){
+      bctx.strokeStyle='rgba(255,255,255,0.35)'; bctx.lineWidth=1.2;
+      bctx.beginPath();
+      for(var i=0;i<drops.length;i++){
+        var d=drops[i];
+        bctx.moveTo(d.x,d.y); bctx.lineTo(d.x-2,d.y+d.len);
+        d.y+=d.sp; d.x-=1.5;
+        if(d.y>innerHeight){ d.y=-20; d.x=Math.random()*innerWidth; }
+      }
+      bctx.stroke();
+    }
+    if(scene==='snow'){
+      bctx.fillStyle='rgba(255,255,255,0.8)';
+      for(var i=0;i<particles.length;i++){
+        var p=particles[i]; p.y+=p.sp; p.sw+=0.02; p.x+=Math.sin(p.sw)*0.5;
+        bctx.beginPath(); bctx.arc(p.x,p.y,p.r,0,Math.PI*2); bctx.fill();
+        if(p.y>innerHeight){ p.y=-5; p.x=Math.random()*innerWidth; }
+      }
+    }
+    requestAnimationFrame(loop);
+  }
+  setScene(0); loop();
+
 </script>
 </body>
 </html>
