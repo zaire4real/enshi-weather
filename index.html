@@ -628,17 +628,17 @@
           return s;
         }
       },
-      legend:{top:0,data:[(isTW?'降水量':'降水量'),(isTW?'最高氣溫':'最高气温'),(isTW?'最低氣溫':'最低气温')],textStyle:{fontSize:12}},
+      legend:{top:0,data:[(isTW?'降水量':'降水量'),(isTW?'最高氣溫':'最高气温'),(isTW?'最低氣溫':'最低气温')],textStyle:{fontSize:12,color:'#86868b'},itemWidth:14,itemHeight:8,icon:'roundRect'},
       grid:{left:46,right:46,top:34,bottom:28,containLabel:true},
-      xAxis:{type:'category',data:labels,axisLabel:{fontSize:11,interval:0,rotate:35,hideOverlap:true},axisLine:{lineStyle:{color:'#c3d4e4'}}},
+      xAxis:{type:'category',data:labels,axisLabel:{fontSize:11,interval:0,rotate:35,hideOverlap:true,color:'#86868b'},axisLine:{lineStyle:{color:'#e5e5ea'}},axisTick:{show:false}},
       yAxis:[
-        {type:'value',name:'mm',nameTextStyle:{fontSize:11},axisLabel:{fontSize:11},splitLine:{lineStyle:{color:'#e6edf4'}}},
-        {type:'value',name:'°C',nameTextStyle:{fontSize:11},axisLabel:{fontSize:11},splitLine:{show:false}}
+        {type:'value',name:'mm',nameTextStyle:{fontSize:11,color:'#86868b'},axisLabel:{fontSize:11,color:'#86868b'},splitLine:{lineStyle:{color:'#f0f0f3',type:'dashed'}}},
+        {type:'value',name:'°C',nameTextStyle:{fontSize:11,color:'#86868b'},axisLabel:{fontSize:11,color:'#86868b'},splitLine:{show:false}}
       ],
       series:[
-        {name:(isTW?'降水量':'降水量'),type:'bar',yAxisIndex:0,data:rains,barWidth:12,itemStyle:{color:'rgba(79,143,201,0.6)',borderColor:'#3b82c4',borderWidth:1},label:{show:true,position:'top',fontSize:9,color:'#94a3b8',formatter:function(p){return p.value>=5?p.value+'mm':'';}}},
-        {name:(isTW?'最高氣溫':'最高气温'),type:'line',yAxisIndex:1,data:highs,smooth:true,lineStyle:{width:2.5,color:'#d97706'},itemStyle:{color:'#d97706'},symbolSize:6},
-        {name:(isTW?'最低氣溫':'最低气温'),type:'line',yAxisIndex:1,data:lows,smooth:true,lineStyle:{width:2.5,color:'#3b82c4'},itemStyle:{color:'#3b82c4'},symbolSize:6}
+        {name:(isTW?'降水量':'降水量'),type:'bar',yAxisIndex:0,data:rains,barWidth:14,itemStyle:{color:'#0071e3',borderRadius:[4,4,0,0],opacity:.85},label:{show:true,position:'top',fontSize:10,color:'#86868b',formatter:function(p){return p.value>=5?p.value+'mm':'';}}},
+        {name:(isTW?'最高氣溫':'最高气温'),type:'line',yAxisIndex:1,data:highs,smooth:true,lineStyle:{width:2.5,color:'#ff9500'},itemStyle:{color:'#ff9500'},symbol:'circle',symbolSize:5,showSymbol:false},
+        {name:(isTW?'最低氣溫':'最低气温'),type:'line',yAxisIndex:1,data:lows,smooth:true,lineStyle:{width:2.5,color:'#0071e3'},itemStyle:{color:'#0071e3'},symbol:'circle',symbolSize:5,showSymbol:false}
       ]
     };
   }
@@ -743,6 +743,7 @@
       nCells++;
     }
     if(html){ strip.innerHTML = html; }
+    else { strip.innerHTML = '<div style="color:#86868b;font-size:13px;padding:12px 8px;">'+(curLang==='zh-TW'?'今日時段已結束，明天見':'今日时段已结束，明天见')+'</div>'; }
     /* 格子很少（不需滑動）時，隱藏滑動提示與右緣漸隱 */
     var sc = strip.parentNode;
     var swipe = document.querySelector('.live-hourly .hdr .swipe');
