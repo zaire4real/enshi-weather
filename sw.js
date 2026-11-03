@@ -1,4 +1,4 @@
-const CACHE_VERSION = "just-right-weather-v8";
+const CACHE_VERSION = "just-right-weather-v9";
 const APP_SHELL = [
   "./",
   "./index.html",
