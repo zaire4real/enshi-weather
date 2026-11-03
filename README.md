@@ -5,7 +5,7 @@
 ## 功能
 
 - 优先请求浏览器精确定位，失败时自动回退到湖北恩施
-- 支持搜索中国城市和区县
+- 支持搜索全球城市、区县与地区，并按所在地时区显示天气
 - 当前天气、体感温度、湿度、风速、降雨概率、紫外线
 - 未来 12 小时和未来 7 天天气
 - AQI、PM2.5、PM10 和臭氧
@@ -14,7 +14,7 @@
 - PWA 安装、离线应用外壳和每 15 分钟自动更新
 - GitHub Pages 自动部署
 
-天气、地理搜索和空气质量来自 [Open-Meteo](https://open-meteo.com/)，空气质量模型数据来自 CAMS。GPS 位置名称使用 BigDataCloud 的免密钥反向地理编码；无法获取名称时仍会使用 GPS 坐标查询天气。
+天气和空气质量来自 [Open-Meteo](https://open-meteo.com/)，空气质量模型数据来自 CAMS。全球多语言地点搜索来自 [OpenStreetMap Nominatim](https://nominatim.org/)，GPS 位置名称使用 BigDataCloud 的免密钥反向地理编码；无法获取名称时仍会使用 GPS 坐标查询天气。
 
 ## 本地预览
 

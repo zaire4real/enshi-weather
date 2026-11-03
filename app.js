@@ -5,6 +5,7 @@ const DEFAULT_LOCATION = {
   longitude: 109.48333,
   name: "恩施",
   admin1: "湖北",
+  country: "中国",
   detail: "定位失败时的默认位置",
   source: "default"
 };
@@ -112,8 +113,11 @@ async function loadWeather(location, { silent = false } = {}) {
 }
 
 function renderLocation(location) {
-  const region = location.admin1 ? `${stripSuffix(location.admin1)} · ` : "";
-  setText("placeName", `${region}${stripSuffix(location.name)}`);
+  const name = stripSuffix(cleanPlaceName(location.name || "当前位置"));
+  const admin = stripSuffix(cleanPlaceName(location.admin1 || ""));
+  const country = stripSuffix(cleanPlaceName(location.country || ""));
+  const region = admin && admin !== name ? admin : country && country !== name ? country : "";
+  setText("placeName", region ? `${region} · ${name}` : name);
   setText("placeDetail", location.detail || (location.source === "gps" ? "已使用精确定位" : "天气与空气质量使用同一位置"));
 }
 
@@ -124,7 +128,7 @@ function renderWeather(data) {
   const hourIndex = findCurrentHourIndex(data);
   const nextHours = sliceHourly(data.hourly, hourIndex, 12);
 
-  setText("greeting", greetingText());
+  setText("greeting", greetingText(current.time));
   setText("currentTemp", clampRound(current.temperature_2m));
   setText("conditionText", meta[0]);
   setText("feelsLike", `${clampRound(current.apparent_temperature)}°`);
@@ -302,6 +306,7 @@ function useGeolocation({ closeDialog = false } = {}) {
       longitude: Number(position.coords.longitude.toFixed(5)),
       name: "当前位置",
       admin1: "",
+      country: "",
       detail: `定位精度约 ${Math.round(position.coords.accuracy)} 米`,
       source: "gps"
     };
@@ -322,7 +327,9 @@ async function reverseGeocode(location) {
   const data = await fetchJson(`https://api.bigdatacloud.net/data/reverse-geocode-client?${params}`, 6000);
   const name = data.locality || data.city || data.principalSubdivision || "当前位置";
   const admin1 = data.principalSubdivision || "";
-  return { ...location, name, admin1: admin1 === name ? "" : admin1 };
+  const country = data.countryName || "";
+  const detail = [country, admin1].filter(Boolean).map(cleanPlaceName).filter((item, index, all) => all.indexOf(item) === index).join(" · ");
+  return { ...location, name, admin1: admin1 === name ? "" : admin1, country, detail: detail || location.detail };
 }
 
 async function searchCities(query) {
@@ -333,10 +340,10 @@ async function searchCities(query) {
     return;
   }
   setText("searchStatus", "正在搜索…");
-  const params = new URLSearchParams({ name: normalized, count: "8", language: "zh", countryCode: "CN" });
+  const params = new URLSearchParams({ q: normalized, format: "jsonv2", addressdetails: "1", namedetails: "1", limit: "10", "accept-language": "zh-CN" });
   try {
-    const data = await fetchJson(`https://geocoding-api.open-meteo.com/v1/search?${params}`, 9000);
-    renderSearchResults(data.results || []);
+    const data = await fetchJson(`https://nominatim.openstreetmap.org/search?${params}`, 9000);
+    renderSearchResults(Array.isArray(data) ? data : []);
   } catch (error) {
     setText("searchStatus", "搜索没有成功，请稍后再试");
     $("#searchResults").replaceChildren();
@@ -353,15 +360,17 @@ function renderSearchResults(results) {
     button.className = "result-button";
     const text = document.createElement("span");
     const title = document.createElement("strong");
-    title.textContent = result.name;
+    const resultName = cleanPlaceName(result.namedetails?.["name:zh-Hans"] || result.namedetails?.["name:zh"] || result.name || result.display_name?.split(",")[0] || "未命名地点");
+    title.textContent = resultName;
     const detail = document.createElement("small");
-    detail.textContent = [result.admin1, result.admin2, result.admin3].filter(Boolean).filter((item, index, all) => all.indexOf(item) === index).join(" · ");
+    const address = result.address || {};
+    detail.textContent = [address.country, address.state || address.province || address.region, address.county || address.state_district].filter(Boolean).map(cleanPlaceName).filter((item, index, all) => all.indexOf(item) === index).join(" · ");
     const arrow = document.createElement("small");
     arrow.textContent = "›";
     text.append(title, detail);
     button.append(text, arrow);
     button.addEventListener("click", () => {
-      const location = { latitude: result.latitude, longitude: result.longitude, name: result.name, admin1: result.admin1 || "", detail: detail.textContent || "中国", source: "search" };
+      const location = { latitude: Number(result.lat), longitude: Number(result.lon), name: resultName, admin1: address.state || address.province || address.region || "", country: address.country || "", detail: detail.textContent || "全球位置", source: "search" };
       $("#searchDialog").close();
       loadWeather(location);
     });
@@ -379,10 +388,11 @@ function openSearch() {
 function stripSuffix(value = "") {
   return value.replace(/省$|市$|自治区$|特别行政区$/u, "");
 }
+function cleanPlaceName(value = "") { const map = { "臺": "台", "灣": "湾", "國": "国", "紐": "纽", "約": "约", "門": "门" }; return value.split(";")[0].split("/")[0].trim().replace(/[臺灣國紐約門]/g, (char) => map[char] || char); }
 function timePart(time = "") { return time.includes("T") ? time.split("T")[1].slice(0, 5) : "--:--"; }
 function weekDay(date) { return ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][new Date(`${date}T12:00:00`).getDay()]; }
 function formatOne(value) { return Number.isFinite(Number(value)) ? Number(value).toFixed(Number(value) >= 10 ? 0 : 1).replace(/\.0$/, "") : "--"; }
-function greetingText() { const hour = new Date().getHours(); return hour < 6 ? "夜深了，早点休息" : hour < 11 ? "早上好，今天也要照顾好自己" : hour < 14 ? "中午好，记得按时吃饭" : hour < 18 ? "下午好，出门看看天气" : "晚上好，回家路上慢一点"; }
+function greetingText(localTime = "") { const parsed = Number(timePart(localTime).split(":")[0]); const hour = Number.isFinite(parsed) ? parsed : new Date().getHours(); return hour < 6 ? "夜深了，早点休息" : hour < 11 ? "早上好，今天也要照顾好自己" : hour < 14 ? "中午好，记得按时吃饭" : hour < 18 ? "下午好，出门看看天气" : "晚上好，回家路上慢一点"; }
 function windDirection(degrees) { const names = ["北风", "东北风", "东风", "东南风", "南风", "西南风", "西风", "西北风"]; return names[Math.round(safeNumber(degrees) / 45) % 8]; }
 function humidityHint(value) { const number = safeNumber(value); return number >= 85 ? "比较潮湿" : number <= 35 ? "空气偏干" : "体感舒适"; }
 function uvHint(value) { const number = safeNumber(value); return number >= 8 ? "尽量避免暴晒" : number >= 6 ? "注意防晒" : number >= 3 ? "适度防晒" : "紫外线较弱"; }
@@ -408,7 +418,7 @@ function bindEvents() {
   $("#refreshButton").addEventListener("click", () => loadWeather(state.location));
   $("#citySearch").addEventListener("input", (event) => {
     clearTimeout(state.searchTimer);
-    state.searchTimer = setTimeout(() => searchCities(event.target.value), 350);
+    state.searchTimer = setTimeout(() => searchCities(event.target.value), 700);
   });
   $("#quickLocations").addEventListener("click", (event) => {
     const button = event.target.closest("button[data-name]");
