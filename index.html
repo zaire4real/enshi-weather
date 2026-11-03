@@ -12,7 +12,7 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" type="image/svg+xml" href="./assets/icons/icon.svg">
   <link rel="apple-touch-icon" href="./assets/icons/icon-192.png">
-  <link rel="stylesheet" href="./styles.css?v=7">
+  <link rel="stylesheet" href="./styles.css?v=8">
 </head>
 <body>
   <a class="skip-link" href="#main">跳到天气内容</a>
@@ -72,6 +72,10 @@
       <div>
         <p class="personal-note-label">给小湘的话</p>
         <p id="gentleNote">小湘，天气会变，出门前再看一眼。</p>
+        <div class="reminder-chips" id="reminderChips" aria-label="今天的小提醒">
+          <span class="reminder-chip">出门前看一眼天气</span>
+          <span class="reminder-chip">记得照顾好自己</span>
+        </div>
       </div>
     </section>
 
@@ -136,6 +140,6 @@
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="./app.js?v=7" defer></script>
+  <script src="./app.js?v=8" defer></script>
 </body>
 </html>

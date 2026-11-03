@@ -55,6 +55,7 @@ a { color: inherit; }
 .hero-card::after { content: ""; position: absolute; inset: auto -60px -95px auto; width: 250px; height: 250px; border-radius: 50%; background: rgba(255,255,255,.28); }
 .hero-copy { position: relative; z-index: 2; }
 .eyebrow { margin: 0 0 5px; color: var(--sage-deep); font-size: 11px; font-weight: 760; letter-spacing: .08em; text-transform: uppercase; }
+.hero-copy #greeting { max-width: 330px; margin: 0 0 15px; color: #486054; font-size: clamp(15px, 4vw, 18px); font-weight: 760; line-height: 1.45; letter-spacing: -.018em; text-transform: none; }
 .hero-copy h1 { margin: 10px 0 0; font-size: clamp(76px, 23vw, 118px); line-height: .88; letter-spacing: -.085em; font-weight: 520; }
 .degree { display: inline-block; margin-left: 5px; font-size: .38em; vertical-align: top; line-height: 1.25; letter-spacing: 0; color: var(--muted); }
 .condition { margin: 18px 0 4px; font-size: 15px; font-weight: 620; }
@@ -97,6 +98,8 @@ a { color: inherit; }
 .personal-note > div:last-child { position: relative; z-index: 1; }
 .personal-note-label { margin: 0 0 5px; color: #85745b; font-size: 10px; font-weight: 760; letter-spacing: .08em; text-transform: uppercase; }
 .personal-note #gentleNote { margin: 0; color: #3c403c; font-size: 16px; font-weight: 680; line-height: 1.55; letter-spacing: -.015em; }
+.reminder-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+.reminder-chip { display: inline-flex; align-items: center; min-height: 27px; padding: 5px 10px; border: 1px solid rgba(116,96,67,.1); border-radius: 999px; background: rgba(255,255,255,.54); color: #665f54; font-size: 10.5px; font-weight: 650; line-height: 1.2; }
 
 .section-card, .air-card { margin-top: 12px; padding: 24px 20px; border-radius: var(--radius); }
 .section-heading { display: flex; justify-content: space-between; align-items: end; gap: 14px; margin-bottom: 19px; }
@@ -191,6 +194,7 @@ a { color: inherit; }
   .shell { width: min(100% - 24px, 760px); }
   .hero-card { min-height: 250px; padding: 26px 21px; }
   .weather-art { right: 4px; transform: scale(.7); }
+  .hero-copy #greeting { max-width: 245px; font-size: 15px; }
   .advice-card { padding: 17px; grid-template-columns: 38px 1fr; }
   .advice-icon { width: 38px; height: 38px; }
 }

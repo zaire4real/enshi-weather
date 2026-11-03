@@ -201,6 +201,14 @@ function renderAdvice(data, hours) {
   setText("dressTitle", dress.title);
   setText("dressDetail", dress.detail);
   setText("gentleNote", dress.gentle);
+  const reminderChips = $("#reminderChips");
+  reminderChips.replaceChildren();
+  dress.reminders.forEach((reminder) => {
+    const chip = document.createElement("span");
+    chip.className = "reminder-chip";
+    chip.textContent = reminder;
+    reminderChips.append(chip);
+  });
 }
 
 function buildUmbrellaAdvice(data, hours) {
@@ -237,6 +245,7 @@ function buildDressAdvice(data, hours) {
   const humidity = safeNumber(data.current.relative_humidity_2m);
   const uv = safeNumber(data.daily.uv_index_max[0]);
   const dayRange = safeNumber(data.daily.temperature_2m_max[0]) - safeNumber(data.daily.temperature_2m_min[0]);
+  const currentRain = safeNumber(data.current.precipitation);
   let title;
   if (feels <= 0) title = "羽绒服和保暖内搭最稳妥";
   else if (feels <= 6) title = "厚外套、毛衣和长裤";
@@ -255,6 +264,18 @@ function buildDressAdvice(data, hours) {
   if (!details.length) details.push("体感比较舒服，按平时习惯穿就好");
 
   const localHour = Number(timePart(data.current.time).split(":")[0]);
+  const reminders = [];
+  if (currentRain >= .1 || maxRain >= 40) reminders.push("雨伞放进包里");
+  if (feels <= 12) reminders.push("外套别忘了");
+  else if (dayRange >= 8) reminders.push("早晚记得加衣");
+  if (uv >= 5) reminders.push("出门认真防晒");
+  if (feels >= 27 || (humidity >= 80 && feels >= 24)) reminders.push("记得多喝一点水");
+  if (maxWind >= 25) reminders.push("风大，走路慢一点");
+  if (localHour >= 18 || localHour < 5) reminders.push("回家路上慢一点");
+  else if (localHour >= 10 && localHour < 14) reminders.push("记得按时吃饭");
+  else if (!reminders.some((item) => item.includes("水"))) reminders.push("有空就喝口水");
+  else reminders.push("今天也要照顾好自己");
+  if (reminders.length < 3) reminders.push("今天也要照顾好自己");
   let gentle;
   if (safeNumber(data.current.precipitation) >= .1) gentle = `${PERSON_NAME}，外面在下雨，伞要拿好，别淋湿了。`;
   else if (maxRain >= 40) gentle = `${PERSON_NAME}，把伞带上，天气变了也不慌。`;
@@ -264,7 +285,7 @@ function buildDressAdvice(data, hours) {
   else if (uv >= 6) gentle = `${PERSON_NAME}，阳光认真，防晒也要认真。`;
   else if (localHour >= 20 || localHour < 5) gentle = `${PERSON_NAME}，回家路上慢一点，到了就早点休息。`;
   else gentle = `${PERSON_NAME}，天气刚刚好，希望你今天心情也很好。`;
-  return { title, detail: details.slice(0, 2).join("；") + "。", gentle };
+  return { title, detail: details.slice(0, 2).join("；") + "。", gentle, reminders: [...new Set(reminders)].slice(0, 3) };
 }
 
 function renderAir(data) {
