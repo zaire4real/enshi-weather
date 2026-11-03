@@ -238,6 +238,11 @@ function buildUmbrellaAdvice(data, hours) {
   return { title: "今天大概率不用带伞", detail: maxChance ? `未来 12 小时降雨概率最高 ${Math.round(maxChance)}%` : "暂时没有明显降水信号" };
 }
 
+function pickBySeed(items, seedSource = "") {
+  const seed = String(seedSource).split("").reduce((total, character) => total + character.charCodeAt(0), 0);
+  return items[seed % items.length];
+}
+
 function buildDressAdvice(data, hours) {
   const feels = safeNumber(data.current.apparent_temperature);
   const maxWind = Math.max(...hours.wind_speed_10m.map((value) => safeNumber(value)), 0);
@@ -246,6 +251,7 @@ function buildDressAdvice(data, hours) {
   const uv = safeNumber(data.daily.uv_index_max[0]);
   const dayRange = safeNumber(data.daily.temperature_2m_max[0]) - safeNumber(data.daily.temperature_2m_min[0]);
   const currentRain = safeNumber(data.current.precipitation);
+  const careSeed = `${data.current.time}-${data.current.weather_code}`;
   let title;
   if (feels <= 0) title = "羽绒服和保暖内搭最稳妥";
   else if (feels <= 6) title = "厚外套、毛衣和长裤";
@@ -271,21 +277,71 @@ function buildDressAdvice(data, hours) {
   if (uv >= 5) reminders.push("出门认真防晒");
   if (feels >= 27 || (humidity >= 80 && feels >= 24)) reminders.push("记得多喝一点水");
   if (maxWind >= 25) reminders.push("风大，走路慢一点");
-  if (localHour >= 18 || localHour < 5) reminders.push("回宿舍路上慢一点");
-  else if (localHour >= 10 && localHour < 14) reminders.push("记得按时吃饭");
-  else if (!reminders.some((item) => item.includes("水"))) reminders.push("有空就喝口水");
-  else reminders.push("今天也要照顾好自己");
-  if (reminders.length < 3) reminders.push("今天也要照顾好自己");
+  if (localHour < 6) reminders.push("早点休息，别熬太晚");
+  else if (localHour < 10) reminders.push("早餐要记得吃");
+  else if (localHour < 14) reminders.push("午饭要按时吃");
+  else if (localHour < 18) reminders.push("忙累了就休息一下");
+  else if (localHour < 22) reminders.push("回宿舍路上慢一点");
+  else reminders.push("回宿舍后早点休息");
+  const everydayReminders = ["有空就喝口水", "别让自己太累", "今天也要好好吃饭", "心情也要照顾好", "手机记得留点电", "慢慢走，别着急"];
+  const reminderStart = everydayReminders.indexOf(pickBySeed(everydayReminders, `${careSeed}-daily`));
+  for (let index = 0; index < everydayReminders.length && new Set(reminders).size < 4; index += 1) {
+    reminders.push(everydayReminders[(reminderStart + index) % everydayReminders.length]);
+  }
   let gentle;
-  if (safeNumber(data.current.precipitation) >= .1) gentle = `${PERSON_NAME}，外面在下雨，伞要拿好，别淋湿了。`;
-  else if (maxRain >= 40) gentle = `${PERSON_NAME}，把伞带上，天气变了也不慌。`;
-  else if (feels <= 8) gentle = `${PERSON_NAME}，今天有点冷，记得把自己裹暖一点。`;
-  else if (feels >= 30) gentle = `${PERSON_NAME}，今天很热，出门记得多喝水。`;
-  else if (dayRange >= 8) gentle = `${PERSON_NAME}，晚上会比白天凉，回宿舍晚的话带件外套。`;
-  else if (uv >= 6) gentle = `${PERSON_NAME}，阳光认真，防晒也要认真。`;
-  else if (localHour >= 20 || localHour < 5) gentle = `${PERSON_NAME}，回宿舍路上慢一点，到了就早点休息。`;
-  else gentle = `${PERSON_NAME}，天气刚刚好，希望你今天心情也很好。`;
-  return { title, detail: details.slice(0, 2).join("；") + "。", gentle, reminders: [...new Set(reminders)].slice(0, 3) };
+  if (currentRain >= .1) gentle = pickBySeed([
+    `${PERSON_NAME}，外面在下雨，伞拿好，别让自己淋湿了。`,
+    `${PERSON_NAME}，正在下雨，走慢一点，鞋子湿了会不舒服。`,
+    `${PERSON_NAME}，出门记得撑伞，路面滑就别走太快。`
+  ], careSeed);
+  else if (maxRain >= 40) gentle = pickBySeed([
+    `${PERSON_NAME}，把小伞放进包里，天气变了也不用慌。`,
+    `${PERSON_NAME}，晚点可能有雨，带把伞会更安心。`,
+    `${PERSON_NAME}，今天的云不太安分，别忘了把伞带上。`
+  ], careSeed);
+  else if (feels <= 8) gentle = pickBySeed([
+    `${PERSON_NAME}，今天有点冷，记得把自己裹暖一点。`,
+    `${PERSON_NAME}，外面凉，手冷就放进口袋里，别硬撑。`,
+    `${PERSON_NAME}，风里有点冷，多穿一件我会更放心。`
+  ], careSeed);
+  else if (feels >= 30) gentle = pickBySeed([
+    `${PERSON_NAME}，今天很热，水要慢慢喝，别让自己晒太久。`,
+    `${PERSON_NAME}，外面闷热，走累了就找个阴凉的地方歇一会儿。`,
+    `${PERSON_NAME}，天气热也要好好吃饭，出门记得带水。`
+  ], careSeed);
+  else if (maxWind >= 25) gentle = pickBySeed([
+    `${PERSON_NAME}，今天风有点大，走路慢一点，外套拉好。`,
+    `${PERSON_NAME}，外面风大，头发吹乱没关系，别着凉就好。`
+  ], careSeed);
+  else if (dayRange >= 8) gentle = pickBySeed([
+    `${PERSON_NAME}，晚上会比白天凉，回宿舍晚的话带件外套。`,
+    `${PERSON_NAME}，今天温差有点大，外套先带着，冷了就穿上。`,
+    `${PERSON_NAME}，白天暖也别急着少穿，晚上会悄悄变凉。`
+  ], careSeed);
+  else if (uv >= 6) gentle = pickBySeed([
+    `${PERSON_NAME}，阳光很认真，防晒也要认真，别晒疼了。`,
+    `${PERSON_NAME}，今天太阳有点热情，出门记得做好防晒。`
+  ], careSeed);
+  else if (localHour >= 20 || localHour < 5) gentle = pickBySeed([
+    `${PERSON_NAME}，回宿舍路上慢一点，到了就早点休息。`,
+    `${PERSON_NAME}，已经不早了，回宿舍注意安全，别熬太晚。`,
+    `${PERSON_NAME}，今天辛苦了，回宿舍洗个热水澡，好好睡一觉。`
+  ], careSeed);
+  else if (localHour < 10) gentle = pickBySeed([
+    `${PERSON_NAME}，早上好，新的一天慢慢来，早餐也要好好吃。`,
+    `${PERSON_NAME}，出门别空着肚子，今天也要精神满满的。`
+  ], careSeed);
+  else if (localHour < 14) gentle = pickBySeed([
+    `${PERSON_NAME}，先好好吃饭，再继续忙，别饿着自己。`,
+    `${PERSON_NAME}，到饭点啦，再忙也要给自己留出吃饭的时间。`
+  ], careSeed);
+  else gentle = pickBySeed([
+    `${PERSON_NAME}，天气刚刚好，希望你今天心情也很好。`,
+    `${PERSON_NAME}，今天也别太累，有空就停下来休息一会儿。`,
+    `${PERSON_NAME}，慢慢来就好，今天也要舒舒服服的。`,
+    `${PERSON_NAME}，不管天气怎样，都要把自己照顾好。`
+  ], careSeed);
+  return { title, detail: details.slice(0, 2).join("；") + "。", gentle, reminders: [...new Set(reminders)].slice(0, 4) };
 }
 
 function renderAir(data) {
@@ -425,7 +481,17 @@ function cleanPlaceName(value = "") { const map = { "臺": "台", "灣": "湾", 
 function timePart(time = "") { return time.includes("T") ? time.split("T")[1].slice(0, 5) : "--:--"; }
 function weekDay(date) { return ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][new Date(`${date}T12:00:00`).getDay()]; }
 function formatOne(value) { return Number.isFinite(Number(value)) ? Number(value).toFixed(Number(value) >= 10 ? 0 : 1).replace(/\.0$/, "") : "--"; }
-function greetingText(localTime = "") { const parsed = Number(timePart(localTime).split(":")[0]); const hour = Number.isFinite(parsed) ? parsed : new Date().getHours(); return hour < 6 ? `${PERSON_NAME}，夜深了，早点休息` : hour < 11 ? `${PERSON_NAME}，早上好，今天也要照顾好自己` : hour < 14 ? `${PERSON_NAME}，中午好，记得按时吃饭` : hour < 18 ? `${PERSON_NAME}，下午好，出门前看看天气` : `${PERSON_NAME}，晚上好，回宿舍路上慢一点`; }
+function greetingText(localTime = "") {
+  const parsed = Number(timePart(localTime).split(":")[0]);
+  const hour = Number.isFinite(parsed) ? parsed : new Date().getHours();
+  if (hour < 6) return `${PERSON_NAME}，夜深了，早点休息`;
+  if (hour < 9) return `${PERSON_NAME}，早上好，出门别忘了吃早餐`;
+  if (hour < 11) return `${PERSON_NAME}，上午好，忙起来也要照顾自己`;
+  if (hour < 14) return `${PERSON_NAME}，中午好，记得按时吃饭`;
+  if (hour < 18) return pickBySeed([`${PERSON_NAME}，下午好，出门前看看天气`, `${PERSON_NAME}，下午好，累了就休息一下`], localTime);
+  if (hour < 22) return `${PERSON_NAME}，晚上好，回宿舍路上慢一点`;
+  return `${PERSON_NAME}，夜深了，回宿舍后早点休息`;
+}
 function windDirection(degrees) { const names = ["北风", "东北风", "东风", "东南风", "南风", "西南风", "西风", "西北风"]; return names[Math.round(safeNumber(degrees) / 45) % 8]; }
 function humidityHint(value) { const number = safeNumber(value); return number >= 85 ? "比较潮湿" : number <= 35 ? "空气偏干" : "体感舒适"; }
 function uvHint(value) { const number = safeNumber(value); return number >= 8 ? "尽量避免暴晒" : number >= 6 ? "注意防晒" : number >= 3 ? "适度防晒" : "紫外线较弱"; }
