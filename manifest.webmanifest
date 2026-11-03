@@ -1,0 +1,17 @@
+{
+  "name": "刚好天气",
+  "short_name": "刚好天气",
+  "description": "一眼看懂要不要带伞、今天怎么穿的温柔天气 App。",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f4f5f1",
+  "theme_color": "#e7ece8",
+  "categories": ["weather", "lifestyle"],
+  "icons": [
+    { "src": "./assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "./assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

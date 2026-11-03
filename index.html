@@ -1,379 +1,132 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>恩施天氣 · 即時看板</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛅</text></svg>">
-<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
-<style>
-  :root{
-    --bg:#f5f5f7; --card:#ffffff; --ink:#1d1d1f; --sub:#86868b;
-    --line:rgba(0,0,0,.06); --blue:#0071e3; --orange:#ff9500;
-    --green:#30d158; --red:#ff453a; --yellow:#ffd60a;
-    --r:22px; --r-sm:16px;
-    --shadow:0 4px 24px rgba(0,0,0,.04),0 1px 2px rgba(0,0,0,.03);
-  }
-  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-  html{scroll-behavior:smooth;}
-  body{font-family:-apple-system,'SF Pro Display','SF Pro Text','PingFang TC','PingFang SC','Noto Sans TC',sans-serif;
-    background:transparent;color:#fff;line-height:1.5;letter-spacing:-.01em;
-    -webkit-font-smoothing:antialiased;padding-bottom:40px;}
-  #bgCanvas{position:fixed;inset:0;z-index:0;pointer-events:none;}
-  .wrap{max-width:720px;margin:0 auto;padding:0 18px;position:relative;z-index:1;}
-  .lang-switch{position:fixed;top:14px;right:14px;z-index:100;}
-  .hero{padding:48px 0 16px;text-align:center;}
-  .loc{font-size:24px;font-weight:600;color:#fff;letter-spacing:-.02em;text-shadow:0 1px 8px rgba(0,0,0,.1);}
-  .loc small{display:block;font-size:13px;color:rgba(255,255,255,.8);font-weight:400;margin-top:2px;letter-spacing:0;}
-  .big-temp{font-size:100px;font-weight:200;line-height:1;letter-spacing:-.05em;color:#fff;margin:18px 0 4px;text-shadow:0 2px 20px rgba(0,0,0,.25);}
-  .big-temp sup{font-size:36px;font-weight:300;color:rgba(255,255,255,.8);vertical-align:super;}
-  .cond{font-size:20px;font-weight:500;color:#fff;}
-  .hi-lo{font-size:15px;color:rgba(255,255,255,.85);margin-top:6px;font-weight:400;}
-  .hi-lo b{color:#fff;font-weight:600;}
-  .meta-row{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 20px;margin-top:18px;font-size:13px;color:rgba(255,255,255,.8);}
-  .meta-row b{color:#fff;font-weight:600;}
-  .lang-switch{position:fixed;top:14px;right:14px;display:flex;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);
-    border-radius:999px;padding:3px;gap:2px;box-shadow:0 2px 12px rgba(0,0,0,.08);z-index:100;}
-  .lang-btn{border:0;background:rgba(255,255,255,.15);color:#fff;font-family:inherit;font-size:12px;font-weight:500;padding:5px 12px;border-radius:999px;cursor:pointer;}
-  .lang-btn.active{background:var(--ink);color:#fff;}
-  .card{background:rgba(255,255,255,.38);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border-radius:16px;padding:16px;margin-top:10px;border:1px solid rgba(255,255,255,.2);box-shadow:var(--shadow);}
-  .card-title{font-size:11px;font-weight:600;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;}
-  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
-  @media(min-width:520px){.grid{grid-template-columns:repeat(3,1fr);}}
-  .g{background:rgba(255,255,255,.2);border-radius:10px;padding:10px 12px;}
-  .g .k{font-size:11px;color:rgba(255,255,255,.7);font-weight:500;margin-bottom:4px;}
-  .g .v{font-size:20px;font-weight:700;color:#fff;letter-spacing:-.02em;}
-  .g .v small{font-size:12px;color:rgba(255,255,255,.7);font-weight:400;margin-left:2px;}
-  .hour-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:0 -20px;padding:0 20px;}
-  .hour-scroll::-webkit-scrollbar{display:none;}
-  .hour-row{display:flex;width:max-content;}
-  .h{flex:0 0 60px;text-align:center;padding:6px 4px;border-right:1px solid rgba(255,255,255,.15);}
-  .h:last-child{border-right:0;}
-  .h .hh{font-size:12px;color:rgba(255,255,255,.7);font-weight:500;}
-  .h .hi{font-size:22px;margin:8px 0;}
-  .h .ht{font-size:15px;font-weight:700;color:#fff;}
-  .h .hp{font-size:11px;color:#64d2ff;font-weight:600;margin-top:4px;}
-  .h.now .hh{color:#fff;font-weight:700;}
-  .h.now{background:rgba(255,255,255,.15);border-radius:10px;}
-  .drow{display:flex;align-items:center;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.15);font-size:14px;}
-  .drow:last-child{border-bottom:0;}
-  .drow .day{flex:0 0 56px;font-weight:600;color:#fff;}
-  .drow .ico{flex:0 0 36px;text-align:center;font-size:18px;}
-  .drow .lo{flex:0 0 34px;text-align:right;color:rgba(255,255,255,.7);font-weight:500;}
-  .drow .bar{flex:1;height:4px;border-radius:2px;background:linear-gradient(90deg,#5ac8fa,#ffcc00,#ff9500);}
-  .drow .hi{flex:0 0 34px;text-align:right;font-weight:700;color:#fff;}
-  #trend{width:100%;height:320px;}
-  .aqi-hero{display:flex;align-items:center;gap:18px;}
-  .aqi-num{font-size:48px;font-weight:700;line-height:1;color:#fff;letter-spacing:-.03em;}
-  .aqi-lvl{font-size:16px;font-weight:600;color:#30d158;margin-top:4px;}
-  .aqi-bar{flex:1;height:8px;border-radius:4px;background:linear-gradient(90deg,#30d158,#ffd60a,#ff9500,#ff453a);margin-top:10px;}
-  .aqi-dots{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;}
-  .ad{background:rgba(255,255,255,.2);border-radius:12px;padding:10px 12px;}
-  .ad .k{font-size:11.5px;color:rgba(255,255,255,.7);}
-  .ad .v{font-size:15px;font-weight:600;color:#fff;margin-top:2px;}
-  .life{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
-  .lc{background:rgba(255,255,255,.2);border-radius:12px;padding:12px;}
-  .lc .t{font-size:13px;font-weight:700;color:#fff;margin-bottom:4px;}
-  .lc .d{font-size:12px;color:rgba(255,255,255,.8);line-height:1.5;}
-  .alert{background:rgba(255,214,10,.15);backdrop-filter:blur(20px);border-radius:16px;padding:16px 18px;margin-top:10px;
-  .alert h3{font-size:15px;font-weight:600;color:#ffd60a;margin-bottom:8px;}
-  .alert ul{margin-left:18px;}
-  .alert li{font-size:13.5px;color:rgba(255,255,255,.9);margin-bottom:4px;line-height:1.6;}
-  .alert li b{color:#ffd60a;}
-  .src-list{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
-  .si{background:rgba(255,255,255,.2);border-radius:10px;padding:12px 14px;font-size:12px;}
-  .si .n{font-weight:600;color:#fff;font-size:12.5px;}
-  .si p{color:rgba(255,255,255,.7);margin-top:2px;font-size:11.5px;}
-  footer{text-align:center;font-size:11px;color:rgba(255,255,255,.6);margin-top:20px;line-height:1.6;padding-bottom:32px;}
-  .live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:5px;vertical-align:1px;}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#e7ece8">
+  <meta name="description" content="一眼看懂要不要带伞、今天怎么穿的温柔天气 App。">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="刚好天气">
+  <title>刚好天气</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="./assets/icons/icon.svg">
+  <link rel="apple-touch-icon" href="./assets/icons/icon-192.png">
+  <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-<canvas id="bgCanvas"></canvas>
-<div class="lang-switch">
-  <button class="lang-btn" data-lang="zh-TW">繁中</button>
-  <button class="lang-btn active" data-lang="zh-CN">简中</button>
-</div>
-<div class="wrap">
-  <div class="hero">
-    <div class="loc" data-i18n="loc">湖北恩施<small data-i18n="locSub">恩施学院 · 金龙大道118号</small></div>
-    <div class="big-temp"><span id="liveTemp">--</span><sup>°</sup></div>
-    <div class="cond" id="liveCond">—</div>
-    <div class="hi-lo"><b id="liveHi">--°</b> <span data-i18n="high">高</span> · <span data-i18n="low">低</span> <b id="liveLo">--°</b></div>
-    <div class="meta-row">
-      <span><span data-i18n="feels">体感</span> <b id="liveFeels">--°</b></span>
-      <span><span data-i18n="hum">湿度</span> <b id="liveHum">--%</b></span>
-      <span><span data-i18n="wind">风</span> <b id="liveWind">--</b></span>
-      <span><span data-i18n="rain">降水</span> <b id="livePrecip">--</b></span>
+  <a class="skip-link" href="#main">跳到天气内容</a>
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+
+  <header class="app-header shell">
+    <a class="brand" href="./" aria-label="刚好天气首页">
+      <span class="brand-mark" aria-hidden="true"><span></span></span>
+      <span>刚好天气</span>
+    </a>
+    <div class="header-actions">
+      <button class="quiet-button install-button" id="installButton" type="button" hidden>添加到桌面</button>
+      <button class="icon-button" id="refreshButton" type="button" aria-label="刷新天气" title="刷新天气">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5M4 18v-5h5M6.1 9A7 7 0 0 1 18.7 6.7L20 11M4 13l1.3 4.3A7 7 0 0 0 17.9 15"/></svg>
+      </button>
     </div>
-  </div>
-  <div class="card">
-    <div class="card-title" data-i18n="now">即时观测</div>
-    <div class="grid">
-      <div class="g"><div class="k" data-i18n="g.temp">气温</div><div class="v" id="gTemp">--°</div></div>
-      <div class="g"><div class="k" data-i18n="g.cond">天气</div><div class="v" id="gCond">--</div></div>
-      <div class="g"><div class="k" data-i18n="g.hum">湿度</div><div class="v" id="gHum">--%</div></div>
-      <div class="g"><div class="k" data-i18n="g.wind">风速</div><div class="v" id="gWind">--<small>km/h</small></div></div>
-      <div class="g"><div class="k" data-i18n="g.aqi">AQI</div><div class="v" id="gAqi">--</div></div>
-      <div class="g"><div class="k" data-i18n="g.pm25">PM2.5</div><div class="v" id="gPm">--<small>μg</small></div></div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-title" data-i18n="hourly">每小时</div>
-    <div class="hour-scroll"><div class="hour-row" id="hourlyStrip"><div style="color:rgba(255,255,255,.7);font-size:13px;padding:14px;" data-i18n="loading">加载中…</div></div></div>
-  </div>
-  <div class="card">
-    <div class="card-title" data-i18n="week">7 天预报</div>
-    <div id="weekList"><div style="color:rgba(255,255,255,.7);font-size:13px;padding:14px;" data-i18n="loading">加载中…</div></div>
-  </div>
-  <div class="card">
-    <div class="card-title" data-i18n="trend">15 天趋势</div>
-    <div id="trend"></div>
-  </div>
-  <div class="card">
-    <div class="card-title" data-i18n="aqi">空气质量</div>
-    <div class="aqi-hero">
-      <div><div class="aqi-num" id="aqiNum">--</div><div class="aqi-lvl" id="aqiLvl">--</div></div>
-      <div style="flex:1"><div class="aqi-bar"></div></div>
-    </div>
-    <div class="aqi-dots">
-      <div class="ad"><div class="k" data-i18n="pm25">PM2.5</div><div class="v" id="pm25">--</div></div>
-      <div class="ad"><div class="k" data-i18n="pm10">PM10</div><div class="v" id="pm10">--</div></div>
-      <div class="ad"><div class="k" data-i18n="o3">臭氧 O₃</div><div class="v" id="o3">--</div></div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-title" data-i18n="life">生活建议</div>
-    <div class="life">
-      <div class="lc"><div class="t" data-i18n="l.dress">穿搭</div><div class="d" id="lDress">--</div></div>
-      <div class="lc"><div class="t" data-i18n="l.umbrella">雨具</div><div class="d" id="lUmbrella">--</div></div>
-      <div class="lc"><div class="t" data-i18n="l.mask">口罩</div><div class="d" id="lMask">--</div></div>
-      <div class="lc"><div class="t" data-i18n="l.sun">防晒</div><div class="d" id="lSun">--</div></div>
-    </div>
-  </div>
-  <div class="alert">
-    <h3 data-i18n="alert.t">小提醒</h3>
-    <ul>
-      <li data-i18n="alert.1">留意官方即时预报，出门前再确认一次。</li>
-      <li data-i18n="alert.2">恩施多山，山区路况与天气变化大。</li>
-      <li data-i18n="alert.3">学院位于山坡地，早晚与日间常有温差。</li>
-      <li data-i18n="alert.4">长时间户外建议做好防晒。</li>
-    </ul>
-  </div>
-  <div class="card">
-    <div class="card-title" data-i18n="src">资料来源</div>
-    <div class="src-list">
-      <div class="si"><div class="n">Open-Meteo</div><p data-i18n="src.open">即时数值预报，每 15 分钟自动更新</p></div>
-      <div class="si"><div class="n" data-i18n="src.nmc">中央气象台</div><p data-i18n="src.nmc.d">官方口径，出行以官方发布为准</p></div>
-      <div class="si"><div class="n" data-i18n="src.wx">中国天气网</div><p data-i18n="src.wx.d">恩施市区预报</p></div>
-      <div class="si"><div class="n" data-i18n="src.aqi">空气质量</div><p data-i18n="src.aqi.d">Open-Meteo Air Quality</p></div>
-    </div>
-  </div>
-  <footer>
-    <div><span class="live-dot"></span><span data-i18n="live">即时更新</span> · <span id="uptime">--</span></div>
-    <div data-i18n="foot">为异地恋的她做的天气看板 · 仅供参考</div>
+  </header>
+
+  <main class="shell" id="main">
+    <section class="location-row" aria-label="位置">
+      <button class="location-button" id="locationButton" type="button" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6-5.3 6-11a6 6 0 1 0-12 0c0 5.7 6 11 6 11Z"/><circle cx="12" cy="10" r="2.2"/></svg>
+        <span><strong id="placeName">湖北 · 恩施</strong><small id="placeDetail">正在获取更准确的位置…</small></span>
+        <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+      <span class="updated-time" id="updatedTime" aria-live="polite">准备更新</span>
+    </section>
+
+    <section class="hero-card card" aria-labelledby="weatherSummary">
+      <div class="hero-copy">
+        <p class="eyebrow" id="greeting">今天也要照顾好自己</p>
+        <h1 id="weatherSummary"><span id="currentTemp">--</span><span class="degree">°</span></h1>
+        <p class="condition"><span id="conditionText">正在看天气</span><span class="dot">·</span>体感 <span id="feelsLike">--°</span></p>
+        <p class="daily-range">最高 <strong id="todayHigh">--°</strong>，最低 <strong id="todayLow">--°</strong></p>
+      </div>
+      <div class="weather-art" id="weatherArt" data-weather="cloudy" aria-hidden="true">
+        <div class="sun"></div><div class="cloud cloud-back"></div><div class="cloud cloud-front"></div><div class="rain-lines"><i></i><i></i><i></i></div>
+      </div>
+    </section>
+
+    <section class="advice-grid" aria-label="今日建议">
+      <article class="advice-card umbrella-card">
+        <div class="advice-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M5 16a11 11 0 0 1 22 0H5Z"/><path d="M16 5v20a3 3 0 0 0 6 0"/></svg></div>
+        <div><p class="advice-label">出门提醒</p><h2 id="umbrellaTitle">正在判断要不要带伞</h2><p id="umbrellaDetail">会看未来 12 小时和短时降水</p></div>
+      </article>
+      <article class="advice-card dress-card">
+        <div class="advice-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M12 6 7 9l-3 7 5 2v9h14v-9l5-2-3-7-5-3a4.5 4.5 0 0 1-8 0Z"/></svg></div>
+        <div><p class="advice-label">穿衣建议</p><h2 id="dressTitle">正在准备今天的穿搭</h2><p id="dressDetail">会综合体感、风、湿度和温差</p></div>
+      </article>
+    </section>
+
+    <section class="card section-card" aria-labelledby="hourlyTitle">
+      <div class="section-heading">
+        <div><p class="eyebrow">接下来</p><h2 id="hourlyTitle">未来 12 小时</h2></div>
+        <p class="section-note" id="hourlyNote">左右滑动查看</p>
+      </div>
+      <div class="hourly-scroll" id="hourlyList" tabindex="0" aria-label="未来 12 小时天气"><div class="loading-line"></div></div>
+    </section>
+
+    <section class="metrics-grid" aria-label="当前天气详情">
+      <article class="metric card"><span>降雨概率</span><strong id="rainChance">--%</strong><small id="rainChanceHint">未来一小时</small></article>
+      <article class="metric card"><span>湿度</span><strong id="humidity">--%</strong><small id="humidityHint">体感舒适</small></article>
+      <article class="metric card"><span>风速</span><strong id="windSpeed">--</strong><small id="windDirection">km/h</small></article>
+      <article class="metric card"><span>紫外线</span><strong id="uvIndex">--</strong><small id="uvHint">注意防晒</small></article>
+    </section>
+
+    <section class="card section-card" aria-labelledby="weekTitle">
+      <div class="section-heading"><div><p class="eyebrow">慢慢安排</p><h2 id="weekTitle">未来 7 天</h2></div></div>
+      <div class="week-list" id="weekList"><div class="loading-line"></div></div>
+    </section>
+
+    <section class="card air-card" aria-labelledby="airTitle">
+      <div class="air-top">
+        <div><p class="eyebrow">空气质量</p><h2 id="airTitle"><span id="aqiLevel">正在更新</span></h2><p id="airAdvice">空气质量数据会跟随当前位置</p></div>
+        <div class="aqi-orb" id="aqiOrb"><span>AQI</span><strong id="aqiValue">--</strong></div>
+      </div>
+      <div class="air-details">
+        <div><span>PM2.5</span><strong id="pm25Value">--</strong><small>μg/m³</small></div>
+        <div><span>PM10</span><strong id="pm10Value">--</strong><small>μg/m³</small></div>
+        <div><span>臭氧</span><strong id="ozoneValue">--</strong><small>μg/m³</small></div>
+      </div>
+      <p class="source-note">空气质量来自 Open-Meteo 与 CAMS 全球大气预报，数值仅供日常参考。</p>
+    </section>
+
+    <section class="gentle-note" aria-label="温柔提醒"><span aria-hidden="true">☁</span><p id="gentleNote">天气会变，出门前再看一眼。</p></section>
+  </main>
+
+  <footer class="footer shell">
+    <p>数据来自 <a href="https://open-meteo.com/" target="_blank" rel="noreferrer">Open-Meteo</a> · 每 15 分钟自动更新</p>
+    <p>天气只是参考，照顾好自己才最重要。</p>
   </footer>
-</div>
-<script>
-  var LAT=30.291899, LON=109.511924;
-  var curLang=(location.hash==='#zh-TW')?'zh-TW':'zh-CN';
-  var I18N={
-    'zh-TW':{loc:'湖北恩施',locSub:'恩施學院 · 金龍大道118號',high:'高',low:'低',feels:'體感',hum:'濕度',wind:'風',rain:'降水',now:'即時觀測','g.temp':'氣溫','g.cond':'天氣','g.hum':'濕度','g.wind':'風速','g.aqi':'空氣品質','g.pm25':'PM2.5',hourly:'每小時',week:'7 天預報',trend:'15 天趨勢',aqi:'空氣品質',pm25:'PM2.5',pm10:'PM10',o3:'臭氧 O₃',life:'生活建議','l.dress':'穿搭','l.umbrella':'雨具','l.mask':'口罩','l.sun':'防曬','alert.t':'小提醒','alert.1':'留意官方即時預報，出門前再確認一次。','alert.2':'恩施多山，山區路況與天氣變化大。','alert.3':'學院位於山坡地，早晚與日間常有溫差。','alert.4':'長時間戶外建議做好防曬。',src:'資料來源','src.open':'即時數值預報，每 15 分鐘自動更新','src.nmc':'中央氣象台','src.nmc.d':'官方口徑，出行以官方發布為準','src.wx':'中國天氣網','src.wx.d':'恩施市區預報','src.aqi':'空氣品質','src.aqi.d':'Open-Meteo Air Quality',live:'即時更新',loading:'載入中…',foot:'為異地戀的她做的天氣看板 · 僅供參考',now:'現在',today:'今天',done:'今日時段已結束',good:'優',mod:'良',ug1:'輕度',ug2:'中度',ug3:'重度'},
-    'zh-CN':{loc:'湖北恩施',locSub:'恩施学院 · 金龙大道118号',high:'高',low:'低',feels:'体感',hum:'湿度',wind:'风',rain:'降水',now:'即时观测','g.temp':'气温','g.cond':'天气','g.hum':'湿度','g.wind':'风速','g.aqi':'空气质量','g.pm25':'PM2.5',hourly:'每小时',week:'7 天预报',trend:'15 天趋势',aqi:'空气质量',pm25:'PM2.5',pm10:'PM10',o3:'臭氧 O₃',life:'生活建议','l.dress':'穿搭','l.umbrella':'雨具','l.mask':'口罩','l.sun':'防晒','alert.t':'小提醒','alert.1':'留意官方即时预报，出门前再确认一次。','alert.2':'恩施多山，山区路况与天气变化大。','alert.3':'学院位于山坡地，早晚与日间常有温差。','alert.4':'长时间户外建议做好防晒。',src:'资料来源','src.open':'即时数值预报，每 15 分钟自动更新','src.nmc':'中央气象台','src.nmc.d':'官方口径，出行以官方发布为准','src.wx':'中国天气网','src.wx.d':'恩施市区预报','src.aqi':'空气质量','src.aqi.d':'Open-Meteo Air Quality',live:'即时更新',loading:'加载中…',foot:'为异地恋的她做的天气看板 · 仅供参考',now:'现在',today:'今天',done:'今日时段已结束',good:'优',mod:'良',ug1:'轻度',ug2:'中度',ug3:'重度'}
-  };
-  var WMO={
-    'zh-TW':{0:'晴',1:'大致晴朗',2:'多雲',3:'陰天',45:'霧',48:'霧凇',51:'毛毛雨',53:'毛毛雨',55:'毛毛雨',56:'凍雨',57:'凍雨',61:'小雨',63:'中雨',65:'大雨',66:'凍雨',67:'凍雨',71:'小雪',73:'中雪',75:'大雪',77:'雪粒',80:'陣雨',81:'陣雨',82:'強陣雨',85:'陣雪',86:'強陣雪',95:'雷雨',96:'雷雨伴冰雹',99:'雷雨伴冰雹'},
-    'zh-CN':{0:'晴',1:'大致晴朗',2:'多云',3:'阴天',45:'雾',48:'雾凇',51:'毛毛雨',53:'毛毛雨',55:'毛毛雨',56:'冻雨',57:'冻雨',61:'小雨',63:'中雨',65:'大雨',66:'冻雨',67:'冻雨',71:'小雪',73:'中雪',75:'大雪',77:'雪粒',80:'阵雨',81:'阵雨',82:'强阵雨',85:'阵雪',86:'强阵雪',95:'雷雨',96:'雷雨伴冰雹',99:'雷雨伴冰雹'}
-  };
-  var ICON={0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌦',56:'🌧',57:'🌧',61:'🌧',63:'🌧',65:'🌧',66:'🌧',67:'🌧',71:'🌨',73:'🌨',75:'❄️',77:'🌨',80:'🌦',81:'🌧',82:'⛈',85:'🌨',86:'❄️',95:'⛈',96:'⛈',99:'⛈'};
-  function t(k){return (I18N[curLang]||I18N['zh-CN'])[k]||k;}
-  function wmo(c){return (WMO[curLang]||WMO['zh-CN'])[c]||String(c);}
-  function icon(c){return ICON[c]||'•';}
-  function pad(n){return n<10?'0'+n:''+n;}
-  function set(id,v){var e=document.getElementById(id);if(e)e.innerHTML=v;}
-  function applyLang(l){
-    curLang=l;
-    document.querySelectorAll('[data-i18n]').forEach(function(el){var k=el.getAttribute('data-i18n');if(I18N[l][k])el.innerHTML=I18N[l][k];});
-    document.querySelectorAll('.lang-btn').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-lang')===l);});
-    if(cachedLive)renderAll(cachedLive.w,cachedLive.a);
-    if(window.__chart)window.__chart.setOption(buildOption(),true);
-  }
-  document.querySelectorAll('.lang-btn').forEach(function(b){b.addEventListener('click',function(){applyLang(this.getAttribute('data-lang'));});});
-  applyLang(curLang);
-  var cachedLive=null;
-  function renderAll(w,a){
-    var c=w.current,d=w.daily;
-    set('liveTemp',Math.round(c.temperature_2m));
-    set('liveCond',wmo(c.weather_code));
-    if(typeof setScene==='function') setScene(c.weather_code);
-    set('liveHi',Math.round(d.temperature_2m_max[0])+'°');
-    set('liveLo',Math.round(d.temperature_2m_min[0])+'°');
-    set('liveFeels',Math.round(c.apparent_temperature)+'°');
-    set('liveHum',c.relative_humidity_2m+'%');
-    var dirs=['北','东北','东','东南','南','西南','西','西北'];
-    set('liveWind',Math.round(c.wind_speed_10m)+' km/h '+dirs[Math.round((c.wind_direction_10m||0)/45)%8]);
-    set('livePrecip',(c.precipitation||0)+' mm');
-    set('gTemp',Math.round(c.temperature_2m)+'°');
-    set('gCond',wmo(c.weather_code));
-    set('gHum',c.relative_humidity_2m+'%');
-    set('gWind',Math.round(c.wind_speed_10m));
-    if(a&&a.current){
-      var v=Math.round(a.current.us_aqi);
-      set('gAqi',v);
-      set('gPm',Math.round(a.current.pm2_5));
-      set('aqiNum',v);
-      var lvl=v<=50?t('good'):(v<=100?t('mod'):(v<=150?t('ug1'):(v<=200?t('ug2'):t('ug3'))));
-      set('aqiLvl',lvl);
-      document.getElementById('aqiLvl').style.color=v<=50?'#30d158':(v<=100?'#ffd60a':'#ff9500');
-      set('pm25',Math.round(a.current.pm2_5)+' μg');
-      set('pm10',Math.round(a.current.pm10||a.current.pm2_5*1.5)+' μg');
-      set('o3',Math.round(a.current.ozone||0)+' μg');
-    }
-    var h=w.hourly,nowMs=Date.now(),todayStr=(function(){var x=new Date(nowMs+8*3600e3);return x.getUTCFullYear()+'-'+pad(x.getUTCMonth()+1)+'-'+pad(x.getUTCDate());})();
-    var html='';
-    for(var i=0;i<h.time.length;i++){
-      var hd=new Date(h.time[i]+'+08:00'),ms=hd.getTime();
-      if(ms<nowMs-30*60e3)continue;
-      var t8=new Date(ms+8*3600e3);
-      if((t8.getUTCFullYear()+'-'+pad(t8.getUTCMonth()+1)+'-'+pad(t8.getUTCDate()))!==todayStr)break;
-      var hh=pad((hd.getUTCHours()+8)%24);
-      var now=Math.abs(ms-nowMs)<30*60e3;
-      html+='<div class="h'+(now?' now':'')+'"><div class="hh">'+(now?t('now'):hh+':00')+'</div><div class="hi">'+icon(h.weather_code[i])+'</div><div class="ht">'+Math.round(h.temperature_2m[i])+'°</div><div class="hp">'+(h.precipitation_probability[i]||0)+'%</div></div>';
-    }
-    set('hourlyStrip',html||'<div style="color:rgba(255,255,255,.7);font-size:13px;padding:14px;">'+t('done')+'</div>');
-    var days=['日','一','二','三','四','五','六'],wl='';
-    var allLo=Infinity, allHi=-Infinity;
-    for(var i=0;i<7;i++){allLo=Math.min(allLo,d.temperature_2m_min[i]);allHi=Math.max(allHi,d.temperature_2m_max[i]);}
-    var rng=allHi-allLo||1;
-    for(var i=0;i<7;i++){
-      var dt=new Date(d.time[i]+'T00:00:00Z');
-      var lbl=i===0?t('today'):(curLang==='zh-TW'?'週':'周')+days[dt.getUTCDay()];
-      var lo=d.temperature_2m_min[i], hi=d.temperature_2m_max[i];
-      var left=((lo-allLo)/rng)*100, right=((allHi-hi)/rng)*100;
-      wl+='<div class="drow"><div class="day">'+lbl+'</div><div class="ico">'+icon(d.weather_code[i])+'</div><div class="lo">'+Math.round(lo)+'°</div><div class="bar" style="margin-left:'+left+'%;margin-right:'+right+'%"></div><div class="hi">'+Math.round(hi)+'°</div></div>';
-    }
-    set('weekList',wl);
-    var hi=d.temperature_2m_max[0],lo=d.temperature_2m_min[0],pr=d.precipitation_probability_max[0]||0;
-    var T=curLang==='zh-TW';
-    set('lDress',hi>=30?(T?'短袖為主，帶件薄外套':'短袖为主，带件薄外套'):(hi>=22?(T?'短袖加薄外套，洋蔥式穿搭':'短袖加薄外套，洋葱式穿搭'):(T?'長袖加外套，注意保暖':'长袖加外套，注意保暖')));
-    set('lUmbrella',pr>=40?(T?'降雨機率高，建議帶傘':'降雨概率高，建议带伞'):(T?'不用帶傘':'不用带伞'));
-    set('lMask',a&&a.current&&a.current.us_aqi>100?(T?'空氣偏差，建議戴口罩':'空气偏差，建议戴口罩'):(T?'空氣良好，不需口罩':'空气良好，不需口罩'));
-    set('lSun',hi>=25?(T?'紫外線偏強，做好防曬':'紫外线偏强，做好防晒'):(T?'一般防曬即可':'一般防晒即可'));
-    var u=new Date();
-    set('uptime',pad((u.getUTCHours()+8)%24)+':'+pad(u.getUTCMinutes()));
-    if(window.__chart)window.__chart.setOption(buildOption(),true);
-  }
-  function buildOption(){
-    var d=cachedLive&&cachedLive.w&&cachedLive.w.daily;
-    var labels=[],rains=[],highs=[],lows=[];
-    if(d&&d.time){for(var i=0;i<15&&i<d.time.length;i++){var dt=new Date(d.time[i]+'T00:00:00Z');labels.push(pad(dt.getUTCMonth()+1)+'/'+pad(dt.getUTCDate()));rains.push(d.precipitation_sum[i]||0);highs.push(d.temperature_2m_max[i]);lows.push(d.temperature_2m_min[i]);}}
-    return{backgroundColor:'transparent',tooltip:{trigger:'axis',triggerOn:'mousemove|click',renderMode:'richText',confine:true},grid:{left:10,right:10,top:30,bottom:20,containLabel:true},xAxis:{type:'category',data:labels,axisLabel:{fontSize:10,color:'rgba(255,255,255,.6)'},axisLine:{lineStyle:{color:'rgba(255,255,255,.2)'}},axisTick:{show:false}},yAxis:[{type:'value',axisLabel:{fontSize:10,color:'rgba(255,255,255,.6)'},splitLine:{lineStyle:{color:'rgba(255,255,255,.1)'}},show:false},{type:'value',axisLabel:{fontSize:10,color:'rgba(255,255,255,.6)'},splitLine:{show:false}}],series:[{name:'降水',type:'bar',yAxisIndex:0,data:rains,barWidth:10,itemStyle:{color:'#0071e3',borderRadius:[3,3,0,0],opacity:.8}},{name:'最高温',type:'line',yAxisIndex:1,data:highs,smooth:true,lineStyle:{width:2.5,color:'#ff9500'},symbol:'circle',symbolSize:4,showSymbol:false},{name:'最低温',type:'line',yAxisIndex:1,data:lows,smooth:true,lineStyle:{width:2.5,color:'#0071e3'},symbol:'circle',symbolSize:4,showSymbol:false}]};
-  }
-  function fetchAll(){
-    var url='https://api.open-meteo.com/v1/forecast?latitude='+LAT+'&longitude='+LON+'&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m&hourly=temperature_2m,weather_code,precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max&timezone=Asia%2FShanghai&forecast_days=16';
-    var aurl='https://air-quality-api.open-meteo.com/v1/air-quality?latitude='+LAT+'&longitude=109.488&current=pm2_5,us_aqi,pm10,ozone&timezone=Asia%2FShanghai';
-    Promise.all([fetch(url).then(function(r){return r.json();}),fetch(aurl).then(function(r){return r.json();})]).then(function(rs){cachedLive={w:rs[0],a:rs[1]};renderAll(rs[0],rs[1]);}).catch(function(e){console.error(e);});
-  }
-  var el=document.getElementById('trend');
-  if(el&&typeof echarts!=='undefined'){window.__chart=echarts.init(el);window.__chart.setOption(buildOption());}
-  fetchAll();
-  setInterval(fetchAll,15*60*1000);
-  window.addEventListener('resize',function(){if(window.__chart)window.__chart.resize();});
 
-  /* ===== 背景天气动画（Apple 风） ===== */
-  var bg = document.getElementById('bgCanvas');
-  var bctx = bg.getContext('2d');
-  var drops=[], clouds=[], particles=[];
-  var scene = 'clear'; // clear/cloud/rain/snow/storm
-  function resizeBg(){ bg.width=innerWidth*devicePixelRatio; bg.height=innerHeight*devicePixelRatio; bctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0); }
-  resizeBg(); window.addEventListener('resize',resizeBg);
+  <dialog class="search-dialog" id="searchDialog" aria-labelledby="searchTitle">
+    <div class="dialog-sheet">
+      <div class="dialog-head">
+        <div><p class="eyebrow">切换位置</p><h2 id="searchTitle">想看看哪里的天气？</h2></div>
+        <button class="icon-button close-button" id="closeSearch" type="button" aria-label="关闭搜索">×</button>
+      </div>
+      <button class="locate-action" id="locateAction" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+        <span><strong>使用我的当前位置</strong><small>需要允许浏览器访问位置</small></span>
+      </button>
+      <label class="search-box">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+        <input id="citySearch" type="search" inputmode="search" autocomplete="off" placeholder="搜索中国城市或区县，如 武汉、利川">
+      </label>
+      <p class="search-status" id="searchStatus">输入至少两个字开始搜索</p>
+      <div class="search-results" id="searchResults"></div>
+      <div class="quick-locations" id="quickLocations"><p>常用城市</p><div><button data-name="恩施">恩施</button><button data-name="武汉">武汉</button><button data-name="宜昌">宜昌</button><button data-name="利川">利川</button></div></div>
+    </div>
+  </dialog>
 
-  function setScene(code){
-    if([95,96,99].indexOf(code)>=0) scene='storm';
-    else if([61,63,65,66,67,80,81,82,51,53,55,56,57].indexOf(code)>=0) scene='rain';
-    else if([71,73,75,77,85,86].indexOf(code)>=0) scene='snow';
-    else if(code===3||code===45||code===48) scene='cloud';
-    else if(code===1||code===2) scene='cloud';
-    else scene='clear';
-    drops=[]; clouds=[]; particles=[];
-    if(scene==='rain'||scene==='storm'){
-      var n = scene==='storm'?220:140;
-      for(var i=0;i<n;i++){
-        var far = Math.random()<0.6;
-        drops.push({x:Math.random()*innerWidth, y:Math.random()*innerHeight,
-          len: far?14+Math.random()*10 : 24+Math.random()*18,
-          sp: far? 8+Math.random()*5 : 16+Math.random()*10, far:far,
-          drift: (Math.random()-0.5)*0.3});
-      }
-    }
-    if(scene==='cloud'||scene==='clear'){
-      var cn = scene==='cloud'?8:4;
-      for(var i=0;i<cn;i++) clouds.push({x:Math.random()*innerWidth, y:20+Math.random()*innerHeight*0.5, r:80+Math.random()*120, sp:0.1+Math.random()*0.15, o:0.2+Math.random()*0.2});
-    }
-    if(scene==='snow'){
-      for(var i=0;i<60;i++) particles.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:2+Math.random()*3,sp:0.5+Math.random()*0.8,sw:Math.random()*Math.PI*2});
-    }
-  }
-
-  var bgGrad=null;
-  function drawGrad(){
-    var g=bctx.createLinearGradient(0,0,0,innerHeight);
-    if(scene==='clear'){ g.addColorStop(0,'#2e7fc4'); g.addColorStop(.55,'#7fb8e8'); g.addColorStop(1,'#d8ecf8'); }
-    else if(scene==='cloud'){ g.addColorStop(0,'#6b7d8f'); g.addColorStop(.55,'#9aabbc'); g.addColorStop(1,'#cdd6df'); }
-    else if(scene==='rain'||scene==='storm'){ g.addColorStop(0,'#3a4a5c'); g.addColorStop(.55,'#5d6e80'); g.addColorStop(1,'#8a99a8'); }
-    else if(scene==='snow'){ g.addColorStop(0,'#9aa8b8'); g.addColorStop(.55,'#bcc8d4'); g.addColorStop(1,'#dde5ec'); }
-    else { g.addColorStop(0,'#2e7fc4'); g.addColorStop(1,'#d8ecf8'); }
-    bctx.fillStyle=g; bctx.fillRect(0,0,innerWidth,innerHeight);
-  }
-
-  function drawCloud(c){
-    var gr=bctx.createRadialGradient(c.x,c.y,c.r*0.2,c.x,c.y,c.r);
-    gr.addColorStop(0,'rgba(255,255,255,'+c.o+')');
-    gr.addColorStop(1,'rgba(255,255,255,0)');
-    bctx.fillStyle=gr;
-    bctx.beginPath();
-    bctx.arc(c.x,c.y,c.r,0,Math.PI*2);
-    bctx.fill();
-  }
-
-  var flash=0;
-  function loop(){
-    drawGrad();
-    if(scene==='storm' && flash>0){
-      bctx.fillStyle='rgba(255,255,255,'+(flash*0.6)+')';
-      bctx.fillRect(0,0,innerWidth,innerHeight);
-      flash-=0.08;
-    }
-    if(scene==='storm' && Math.random()<0.005){ flash=1; }
-    if(scene==='cloud'||scene==='clear'){
-      for(var i=0;i<clouds.length;i++){
-        var c=clouds[i]; c.x+=c.sp; if(c.x-c.r*2>innerWidth) c.x=-c.r*2;
-        drawCloud(c);
-      }
-    }
-    if(scene==='rain'||scene==='storm'){
-      for(var i=0;i<drops.length;i++){
-        var d=drops[i];
-        bctx.strokeStyle=d.far?'rgba(210,225,240,0.18)':'rgba(230,240,250,0.45)';
-        bctx.lineWidth=d.far?0.8:1.1;
-        bctx.beginPath();
-        bctx.moveTo(d.x,d.y); bctx.lineTo(d.x+d.drift,d.y+d.len);
-        d.y+=d.sp; d.x+=d.drift;
-        if(d.y>innerHeight){ d.y=-40; d.x=Math.random()*(innerWidth+100)-50; }
-      }
-    }
-    if(scene==='snow'){
-      bctx.fillStyle='rgba(255,255,255,0.8)';
-      for(var i=0;i<particles.length;i++){
-        var p=particles[i]; p.y+=p.sp; p.sw+=0.02; p.x+=Math.sin(p.sw)*0.5;
-        bctx.beginPath(); bctx.arc(p.x,p.y,p.r,0,Math.PI*2); bctx.fill();
-        if(p.y>innerHeight){ p.y=-5; p.x=Math.random()*innerWidth; }
-      }
-    }
-    requestAnimationFrame(loop);
-  }
-  setScene(0); loop();
-
-</script>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="./app.js" defer></script>
 </body>
 </html>
