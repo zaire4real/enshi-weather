@@ -1,7 +1,7 @@
 {
-  "name": "刚好天气",
-  "short_name": "刚好天气",
-  "description": "一眼看懂要不要带伞、今天怎么穿的温柔天气 App。",
+  "name": "湘伴日常",
+  "short_name": "湘伴日常",
+  "description": "陪小湘看晴雨、知冷暖的温柔天气 App。",
   "lang": "zh-CN",
   "start_url": "./",
   "scope": "./",
