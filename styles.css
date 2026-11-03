@@ -90,6 +90,14 @@ a { color: inherit; }
 .advice-card h2 { margin: 0; font-size: 17px; line-height: 1.3; letter-spacing: -.02em; }
 .advice-card p:last-child { margin: 7px 0 0; color: #69736e; font-size: 12px; line-height: 1.55; }
 
+.personal-note { position: relative; overflow: hidden; display: grid; grid-template-columns: 46px 1fr; gap: 15px; align-items: center; margin-top: 12px; padding: 20px; border: 1px solid rgba(157, 126, 79, .13); border-radius: 26px; background: linear-gradient(135deg, #f2e8d6 0%, #ece6dc 58%, #e4ebe5 100%); box-shadow: 0 14px 38px rgba(92, 78, 57, .09); }
+.personal-note::after { content: ""; position: absolute; right: -28px; top: -42px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,.24); pointer-events: none; }
+.personal-note-icon { position: relative; z-index: 1; width: 46px; height: 46px; display: grid; place-items: center; border-radius: 16px; background: rgba(255,255,255,.64); box-shadow: inset 0 0 0 1px rgba(90,71,45,.06); }
+.personal-note-icon svg { width: 25px; fill: none; stroke: #6f6657; stroke-width: 1.55; stroke-linecap: round; stroke-linejoin: round; }
+.personal-note > div:last-child { position: relative; z-index: 1; }
+.personal-note-label { margin: 0 0 5px; color: #85745b; font-size: 10px; font-weight: 760; letter-spacing: .08em; text-transform: uppercase; }
+.personal-note #gentleNote { margin: 0; color: #3c403c; font-size: 16px; font-weight: 680; line-height: 1.55; letter-spacing: -.015em; }
+
 .section-card, .air-card { margin-top: 12px; padding: 24px 20px; border-radius: var(--radius); }
 .section-heading { display: flex; justify-content: space-between; align-items: end; gap: 14px; margin-bottom: 19px; }
 .section-heading h2, .air-card h2 { margin: 0; font-size: 20px; letter-spacing: -.035em; }
@@ -134,9 +142,6 @@ a { color: inherit; }
 .air-details span, .air-details small { display: block; color: var(--muted); font-size: 9px; }
 .air-details strong { display: block; margin: 6px 0 2px; font-size: 17px; }
 .source-note { margin: 14px 2px 0; color: var(--muted); font-size: 9px; line-height: 1.5; }
-.gentle-note { display: flex; gap: 10px; justify-content: center; align-items: center; margin: 26px 0 6px; color: var(--muted); font-size: 12px; }
-.gentle-note span { color: #b7c2bc; }
-.gentle-note p { margin: 0; }
 .footer { padding: 20px 0 calc(34px + env(safe-area-inset-bottom)); color: var(--muted); text-align: center; font-size: 10px; line-height: 1.7; }
 .footer p { margin: 2px; }
 .footer a { text-underline-offset: 2px; }

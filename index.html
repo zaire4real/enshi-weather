@@ -12,7 +12,7 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" type="image/svg+xml" href="./assets/icons/icon.svg">
   <link rel="apple-touch-icon" href="./assets/icons/icon-192.png">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=7">
 </head>
 <body>
   <a class="skip-link" href="#main">跳到天气内容</a>
@@ -65,6 +65,16 @@
       </article>
     </section>
 
+    <section class="personal-note" aria-label="给小湘的提醒">
+      <div class="personal-note-icon" aria-hidden="true">
+        <svg viewBox="0 0 32 32"><path d="M8 18.5V14a8 8 0 0 1 16 0v4.5l2.5 3.5h-21L8 18.5Z"/><path d="M13 25a3.5 3.5 0 0 0 6 0"/></svg>
+      </div>
+      <div>
+        <p class="personal-note-label">给小湘的话</p>
+        <p id="gentleNote">小湘，天气会变，出门前再看一眼。</p>
+      </div>
+    </section>
+
     <section class="card section-card" aria-labelledby="hourlyTitle">
       <div class="section-heading">
         <div><p class="eyebrow">接下来</p><h2 id="hourlyTitle">未来 12 小时</h2></div>
@@ -98,7 +108,6 @@
       <p class="source-note">空气质量来自 Open-Meteo 与 CAMS 全球大气预报，数值仅供日常参考。</p>
     </section>
 
-    <section class="gentle-note" aria-label="温柔提醒"><span aria-hidden="true">☁</span><p id="gentleNote">小湘，天气会变，出门前再看一眼。</p></section>
   </main>
 
   <footer class="footer shell">
@@ -127,6 +136,6 @@
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="./app.js" defer></script>
+  <script src="./app.js?v=7" defer></script>
 </body>
 </html>

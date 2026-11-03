@@ -328,8 +328,9 @@ function useGeolocation({ closeDialog = false } = {}) {
   }, (error) => {
     action.disabled = false;
     const reason = error.code === 1 ? "未获得定位权限" : error.code === 3 ? "定位超时" : "暂时无法定位";
-    setText("placeDetail", `${reason} · 当前为默认位置`);
-    showToast(`${reason}，已显示湖北恩施`);
+    const usingDefault = Math.abs(safeNumber(state.location.latitude) - DEFAULT_LOCATION.latitude) < .0001 && Math.abs(safeNumber(state.location.longitude) - DEFAULT_LOCATION.longitude) < .0001;
+    setText("placeDetail", usingDefault ? `${reason} · 当前为默认位置` : `${reason} · 已保留当前城市`);
+    showToast(usingDefault ? `${reason}，已显示湖北恩施` : `${reason}，已保留${stripSuffix(state.location.name)}`);
   }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 5 * 60 * 1000 });
 }
 
