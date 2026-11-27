@@ -9,7 +9,7 @@ const CONFIG = {
   partner: null,
   // 在一起的日期：填好后会显示「在一起的第 N 天」；null 表示不显示
   // 例："2024-05-20"
-  togetherSince: null
+  togetherSince: "2026-09-19"
 };
 // 指定日期的留言写在 messages.json，不用改这里
 
