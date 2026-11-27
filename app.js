@@ -773,10 +773,14 @@ function renderPushCard() {
 async function enablePush() {
   const saved = localStorage.getItem(PUSH_CODE_KEY);
   if (saved && Notification.permission === "granted") { showPushCode(saved); return; }
+  const button = $("#pushButton");
+  button.disabled = true;
+  setText("pushButton", "正在开启…");
   try {
     const permission = await Notification.requestPermission();
     if (permission !== "granted") { showToast("没有开启通知，之后想开可以再点一次"); renderPushCard(); return; }
-    const registration = await navigator.serviceWorker.ready;
+    await withTimeout(registerServiceWorker(), 10000, "sw");
+    const registration = await withTimeout(navigator.serviceWorker.ready, 10000, "sw");
     const subscription = await registration.pushManager.getSubscription()
       || await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64UrlToBytes(PUSH_PUBLIC_KEY) });
     const place = state.location;
@@ -785,7 +789,10 @@ async function enablePush() {
     renderPushCard();
     showPushCode(code);
   } catch (error) {
-    showToast("开启没有成功，请稍后再试一次");
+    showToast("开启没有成功，关掉 App 重新打开后再试一次");
+    renderPushCard();
+  } finally {
+    button.disabled = false;
   }
 }
 
@@ -801,7 +808,18 @@ async function copyPushCode() {
   showToast("已复制，发给他就好");
 }
 
+function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return Promise.resolve(null);
+  state.swRegistration = state.swRegistration || navigator.serviceWorker.register("./sw.js").catch(() => null);
+  return state.swRegistration;
+}
+
+function withTimeout(promise, ms, message) {
+  return Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error(message)), ms))]);
+}
+
 async function init() {
+  registerServiceWorker();
   bindEvents();
   renderLocation(DEFAULT_LOCATION);
   const saved = savedLocation();
@@ -811,9 +829,7 @@ async function init() {
   await loadWeather(initial);
   useGeolocation();
   setInterval(() => loadWeather(state.location, { silent: true }), 15 * 60 * 1000);
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
-  }
+
 }
 
 init();
