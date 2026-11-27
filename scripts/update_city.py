@@ -20,7 +20,7 @@ def nominatim(endpoint, params):
 
 
 MUNICIPALITIES = {"CN-BJ": "北京", "CN-SH": "上海", "CN-TJ": "天津", "CN-CQ": "重庆", "CN-HK": "香港", "CN-MO": "澳门"}
-TRAD = str.maketrans({"臺": "台", "灣": "湾", "國": "国", "紐": "纽", "約": "约", "門": "门", "東": "东", "華": "华", "蘭": "兰", "爾": "尔"})
+TRAD = str.maketrans({"臺": "台", "灣": "湾", "國": "国", "紐": "纽", "約": "约", "門": "门", "東": "东", "華": "华", "蘭": "兰", "爾": "尔", "鎮": "镇", "縣": "县", "鄉": "乡", "區": "区", "東": "东"})
 
 
 def city_name(result):
@@ -48,8 +48,11 @@ def reverse_city(lat, lon):
     # 自治州之类的名字太长，用下面的县级市（如 恩施土家族苗族自治州 → 恩施）
     if (not city or city.endswith(("自治州", "地区", "盟"))) and locality:
         city = locality
+    # 台湾的乡镇（如 竹東鎮）她不一定认得，改用县市（新竹）
+    if city.endswith(("鎮", "镇", "鄉", "乡")) and data.get("principalSubdivision"):
+        city = data["principalSubdivision"]
     name = (city or data.get("principalSubdivision") or "我这边").translate(TRAD).strip()
-    return re.sub(r"(市|都|特别行政区)$", "", name) or name
+    return re.sub(r"(市|都|縣|县|特别行政区)$", "", name) or name
 
 
 def to_float(value):
