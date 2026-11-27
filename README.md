@@ -17,6 +17,13 @@
 
 天气和空气质量来自 [Open-Meteo](https://open-meteo.com/)，空气质量模型数据来自 CAMS。全球多语言地点搜索来自 [OpenStreetMap Nominatim](https://nominatim.org/)，GPS 位置名称使用 BigDataCloud 的免密钥反向地理编码；无法获取名称时仍会使用 GPS 坐标查询天气。
 
+## 自己改的设定
+
+- `app.js` 顶部的 `CONFIG`：
+  - `partner`：你所在的城市和经纬度，填好后显示「我这边」小卡。
+  - `togetherSince`：在一起的日期（如 `"2024-05-20"`），填好后显示「在一起的第 N 天」。
+- `messages.json`：指定日期的留言。`dates` 写某一天（`"2026-12-24"`），`yearly` 写每年的同一天（`"05-20"`）。到了那天，「今天想提醒小湘」会换成这句话。
+
 ## 本地预览
 
 ```bash

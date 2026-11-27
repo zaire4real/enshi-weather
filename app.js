@@ -2,6 +2,17 @@
 
 const PERSON_NAME = "小湘";
 
+// ===== 可以自己改的设定 =====
+const CONFIG = {
+  // 你所在的城市：填好后会显示「我这边」小卡；null 表示不显示
+  // 例：{ name: "台北", latitude: 25.033, longitude: 121.565 }
+  partner: null,
+  // 在一起的日期：填好后会显示「在一起的第 N 天」；null 表示不显示
+  // 例："2024-05-20"
+  togetherSince: null
+};
+// 指定日期的留言写在 messages.json，不用改这里
+
 const DEFAULT_LOCATION = {
   latitude: 30.3,
   longitude: 109.48333,
@@ -14,7 +25,7 @@ const DEFAULT_LOCATION = {
 
 const WEATHER_CODES = {
   0: ["晴", "☀️", "sunny"], 1: ["大致晴朗", "🌤️", "sunny"], 2: ["多云", "⛅", "cloudy"], 3: ["阴天", "☁️", "cloudy"],
-  45: ["有雾", "🌫️", "cloudy"], 48: ["雾凇", "🌫️", "cloudy"], 51: ["毛毛雨", "🌦️", "rainy"], 53: ["毛毛雨", "🌦️", "rainy"],
+  45: ["有雾", "☁️", "cloudy"], 48: ["雾凇", "☁️", "cloudy"], 51: ["毛毛雨", "🌦️", "rainy"], 53: ["毛毛雨", "🌦️", "rainy"],
   55: ["较强毛毛雨", "🌧️", "rainy"], 56: ["冻雨", "🌧️", "rainy"], 57: ["较强冻雨", "🌧️", "rainy"], 61: ["小雨", "🌧️", "rainy"],
   63: ["中雨", "🌧️", "rainy"], 65: ["大雨", "🌧️", "rainy"], 66: ["冻雨", "🌧️", "rainy"], 67: ["较强冻雨", "🌧️", "rainy"],
   71: ["小雪", "🌨️", "snowy"], 73: ["中雪", "🌨️", "snowy"], 75: ["大雪", "❄️", "snowy"], 77: ["雪粒", "🌨️", "snowy"],
@@ -23,7 +34,7 @@ const WEATHER_CODES = {
 };
 
 const $ = (selector) => document.querySelector(selector);
-const state = { location: DEFAULT_LOCATION, weather: null, air: null, deferredInstall: null, searchTimer: null, requestId: 0 };
+const state = { messages: {}, location: DEFAULT_LOCATION, weather: null, air: null, deferredInstall: null, searchTimer: null, requestId: 0 };
 const clampRound = (value) => Number.isFinite(Number(value)) ? Math.round(Number(value)) : "--";
 const safeNumber = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
 const weatherMeta = (code) => WEATHER_CODES[code] || ["天气变化中", "☁️", "cloudy"];
@@ -60,7 +71,7 @@ function weatherUrl(location) {
     latitude: location.latitude,
     longitude: location.longitude,
     current: "temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m,wind_direction_10m",
-    hourly: "temperature_2m,apparent_temperature,relative_humidity_2m,precipitation_probability,precipitation,weather_code,wind_speed_10m,uv_index",
+    hourly: "temperature_2m,apparent_temperature,relative_humidity_2m,precipitation_probability,precipitation,weather_code,wind_speed_10m,uv_index,is_day",
     daily: "weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_sum,precipitation_probability_max,uv_index_max,sunrise,sunset",
     minutely_15: "precipitation",
     forecast_days: "8",
@@ -109,6 +120,7 @@ async function loadWeather(location, { silent = false } = {}) {
   renderLocation(location);
   renderWeather(state.weather);
   renderAir(state.air);
+  loadPartner();
   persistState();
   setText("updatedTime", `更新于 ${timePart(state.weather.current.time)}`);
   if (airResult.status === "rejected") showToast("天气已更新，空气质量暂时不可用");
@@ -131,6 +143,8 @@ function renderWeather(data) {
   const nextHours = sliceHourly(data.hourly, hourIndex, 12);
 
   setText("greeting", greetingText(current.time));
+  applyTheme(current.is_day === 0);
+  renderTogether(current.time);
   setText("currentTemp", clampRound(current.temperature_2m));
   setText("conditionText", meta[0]);
   setText("feelsLike", `${clampRound(current.apparent_temperature)}°`);
@@ -175,7 +189,10 @@ function renderHourly(hourly) {
     const item = document.createElement("div");
     item.className = `hour${index === 0 ? " is-now" : ""}`;
     const rain = safeNumber(hourly.precipitation_probability[index]);
-    item.innerHTML = `<span class="hour-time">${index === 0 ? "现在" : timePart(time)}</span><span class="weather-symbol" aria-label="${weatherMeta(hourly.weather_code[index])[0]}">${weatherMeta(hourly.weather_code[index])[1]}</span><strong>${clampRound(hourly.temperature_2m[index])}°</strong><span class="hour-rain">${rain ? `${Math.round(rain)}%` : "—"}</span>`;
+    const code = hourly.weather_code[index];
+    const isNight = hourly.is_day?.[index] === 0;
+    const icon = isNight && code <= 1 ? "🌙" : isNight && code === 2 ? "☁️" : weatherMeta(code)[1];
+    item.innerHTML = `<span class="hour-time">${index === 0 ? "现在" : timePart(time)}</span><span class="weather-symbol" aria-label="${weatherMeta(code)[0]}">${icon}</span><strong>${clampRound(hourly.temperature_2m[index])}°</strong><span class="hour-rain">${rain ? `${Math.round(rain)}%` : "—"}</span>`;
     list.append(item);
   });
 }
@@ -183,11 +200,15 @@ function renderHourly(hourly) {
 function renderWeek(daily) {
   const list = $("#weekList");
   list.replaceChildren();
+  const lows = daily.temperature_2m_min.slice(0, 7).map((value) => safeNumber(value));
+  const highs = daily.temperature_2m_max.slice(0, 7).map((value) => safeNumber(value));
+  const weekLow = Math.min(...lows);
+  const span = Math.max(Math.max(...highs) - weekLow, 1);
   daily.time.slice(0, 7).forEach((date, index) => {
     const row = document.createElement("div");
     row.className = "day-row";
     const chance = safeNumber(daily.precipitation_probability_max[index]);
-    row.innerHTML = `<span class="day-name">${index === 0 ? "今天" : weekDay(date)}</span><span class="day-icon" aria-label="${weatherMeta(daily.weather_code[index])[0]}">${weatherMeta(daily.weather_code[index])[1]}</span><span class="day-rain">${chance ? `${Math.round(chance)}%` : ""}</span><span class="day-temp"><span class="low">${clampRound(daily.temperature_2m_min[index])}°</span><span>${clampRound(daily.temperature_2m_max[index])}°</span></span>`;
+    row.innerHTML = `<span class="day-name">${index === 0 ? "今天" : weekDay(date)}</span><span class="day-icon" aria-label="${weatherMeta(daily.weather_code[index])[0]}">${weatherMeta(daily.weather_code[index])[1]}</span><span class="day-rain">${chance ? `${Math.round(chance)}%` : ""}</span><span class="low">${clampRound(daily.temperature_2m_min[index])}°</span><span class="temp-track"><i style="left:${((lows[index] - weekLow) / span * 100).toFixed(1)}%;right:${(100 - (highs[index] - weekLow) / span * 100).toFixed(1)}%"></i></span><span class="high">${clampRound(daily.temperature_2m_max[index])}°</span>`;
     list.append(row);
   });
 }
@@ -216,10 +237,15 @@ function renderAdvice(data, hours) {
   const dress = buildDressAdvice(data, hours, plan);
   setText("dressTitle", dress.title);
   setText("dressDetail", dress.detail);
-  setText("gentleNote", dress.gentle);
+  const special = specialMessage(data.current.time);
+  setText("gentleNote", special || dress.gentle);
+  // 上面已经说过的事（问候、带伞、穿衣、给她的话），小提醒就不再重复
+  const covered = topicsOf([$("#greeting").textContent, umbrella.title, dress.title, dress.detail, special || dress.gentle].join(" "));
+  const chips = dress.reminders.filter((reminder) => !topicsOf(reminder).some((topic) => covered.includes(topic))).slice(0, 3);
   const reminderChips = $("#reminderChips");
   reminderChips.replaceChildren();
-  dress.reminders.forEach((reminder) => {
+  reminderChips.hidden = !chips.length;
+  chips.forEach((reminder) => {
     const chip = document.createElement("span");
     chip.className = "reminder-chip";
     chip.textContent = reminder;
@@ -274,6 +300,13 @@ function buildDaytimeUmbrellaAdvice(data, plan) {
     detail: rainingNow ? "不过现在外面在下雨，这会儿出门记得撑伞" : `${label} 7–19 点降雨概率最高 ${Math.round(maxChance)}%`
   };
 }
+
+const TOPIC_RULES = [
+  ["umbrella", /伞|雨/], ["layer", /外套|加衣|穿暖|多穿|厚|冷|温差|裹/], ["water", /喝|水杯/],
+  ["meal", /吃|饭|早餐/], ["rest", /休息|睡|熬|累/], ["walk", /路上|慢一点|慢慢走/],
+  ["sun", /防晒|晒|紫外线|阳光|太阳/], ["wind", /风/], ["mood", /心情/], ["phone", /手机/]
+];
+function topicsOf(text = "") { return TOPIC_RULES.filter(([, rule]) => rule.test(text)).map(([topic]) => topic); }
 
 function pickBySeed(items, seedSource = "") {
   const seed = String(seedSource).split("").reduce((total, character) => total + character.charCodeAt(0), 0);
@@ -332,7 +365,7 @@ function buildDressAdvice(data, hours, plan = null) {
   else reminders.push("回宿舍后早点休息");
   const everydayReminders = ["有空就喝口水", "别让自己太累", "今天也要好好吃饭", "心情也要照顾好", "手机记得留点电", "慢慢走，别着急"];
   const reminderStart = everydayReminders.indexOf(pickBySeed(everydayReminders, `${careSeed}-daily`));
-  for (let index = 0; index < everydayReminders.length && new Set(reminders).size < 4; index += 1) {
+  for (let index = 0; index < everydayReminders.length; index += 1) {
     reminders.push(everydayReminders[(reminderStart + index) % everydayReminders.length]);
   }
   let gentle;
@@ -406,7 +439,60 @@ function buildDressAdvice(data, hours, plan = null) {
     `${PERSON_NAME}，今天辛苦了，回宿舍洗个热水澡，好好睡一觉。`
   ], careSeed);
   if (plan) details.unshift(`按${ahead}白天体感约 ${Math.round(feels)}° 来穿`);
-  return { title, detail: details.slice(0, 2).join("；") + "。", gentle, reminders: [...new Set(reminders)].slice(0, 4) };
+  return { title, detail: details.slice(0, 2).join("；") + "。", gentle, reminders: [...new Set(reminders)] };
+}
+
+function applyTheme(isNight) {
+  document.documentElement.dataset.theme = isNight ? "night" : "day";
+  document.querySelector('meta[name="theme-color"]').setAttribute("content", isNight ? "#1d2421" : "#e7ece8");
+}
+
+function daysBetween(fromDate, toDate) {
+  const [a, b] = [fromDate, toDate].map((value) => Date.UTC(...value.split("-").map((part, index) => Number(part) - (index === 1 ? 1 : 0))));
+  return Math.floor((b - a) / 86400000);
+}
+
+function renderTogether(localTime) {
+  const node = $("#togetherDays");
+  const valid = /^\d{4}-\d{2}-\d{2}$/.test(CONFIG.togetherSince || "");
+  node.hidden = !valid;
+  if (!valid) return;
+  const days = daysBetween(CONFIG.togetherSince, localTime.slice(0, 10)) + 1;
+  node.hidden = days < 1;
+  node.textContent = `在一起的第 ${days} 天`;
+}
+
+async function loadMessages() {
+  try {
+    const data = await fetchJson("./messages.json", 5000);
+    state.messages = data && typeof data === "object" ? data : {};
+  } catch (_) { state.messages = {}; }
+}
+
+// messages.json 里写给她的话：指定日期优先，其次是每年的同一天
+function specialMessage(localTime = "") {
+  const date = localTime.slice(0, 10);
+  const text = state.messages.dates?.[date] || state.messages.yearly?.[date.slice(5)];
+  return typeof text === "string" && text.trim() ? text.trim() : null;
+}
+
+async function loadPartner() {
+  const card = $("#partnerCard");
+  const partner = CONFIG.partner;
+  if (!partner || !Number.isFinite(Number(partner.latitude)) || !Number.isFinite(Number(partner.longitude))) { card.hidden = true; return; }
+  const params = new URLSearchParams({ latitude: partner.latitude, longitude: partner.longitude, current: "temperature_2m,weather_code,is_day", timezone: "auto" });
+  try {
+    const data = await fetchJson(`https://api.open-meteo.com/v1/forecast?${params}`, 9000);
+    const meta = weatherMeta(data.current.weather_code);
+    setText("partnerName", partner.name || "我这边");
+    setText("partnerIcon", meta[1]);
+    setText("partnerTemp", `${clampRound(data.current.temperature_2m)}°`);
+    setText("partnerCondition", meta[0]);
+    const diff = Math.round(safeNumber(data.current.temperature_2m) - safeNumber(state.weather?.current?.temperature_2m));
+    const compare = Math.abs(diff) <= 1 ? "我们两边温度差不多" : `我这边比你那边${diff > 0 ? "暖" : "冷"} ${Math.abs(diff)}°`;
+    setText("partnerCompare", `${compare} · 当地 ${timePart(data.current.time)}`);
+    card.hidden = false;
+  } catch (_) { card.hidden = true; }
 }
 
 function renderAir(data) {
@@ -611,6 +697,7 @@ async function init() {
   renderLocation(DEFAULT_LOCATION);
   const saved = savedLocation();
   const initial = saved || DEFAULT_LOCATION;
+  await loadMessages();
   await loadWeather(initial);
   useGeolocation();
   setInterval(() => loadWeather(state.location, { silent: true }), 15 * 60 * 1000);

@@ -81,8 +81,16 @@ a { color: inherit; }
 .weather-art[data-weather="snowy"] .rain-lines i { width: 5px; height: 5px; border-radius: 50%; transform: none; background: white; }
 .weather-art[data-weather="night"] .sun { background: #d8ded9; box-shadow: inset 15px -8px 0 #f1f3ef; }
 
+.together { display: inline-block; margin: 12px 0 0; padding: 5px 11px; border-radius: 999px; background: rgba(255,255,255,.55); color: #8a6c5a; font-size: 11px; font-weight: 700; }
+.partner-card { margin-top: 12px; padding: 16px 18px; border-radius: 24px; background: #ebe7ef; }
+.partner-card .advice-label { margin: 0; }
+.partner-main { display: flex; align-items: center; gap: 8px; margin: 4px 0 2px; }
+.partner-main .weather-symbol { height: auto; font-size: 22px; }
+.partner-main strong { font-size: 24px; letter-spacing: -.03em; }
+.partner-main span:last-child { color: var(--muted); font-size: 13px; font-weight: 620; }
+.partner-compare { margin: 0; color: #69736e; font-size: 12px; }
 .advice-grid { display: grid; gap: 12px; margin-top: 12px; }
-.advice-card { min-height: 132px; display: grid; grid-template-columns: 42px 1fr; gap: 14px; align-items: start; padding: 20px; border-radius: 26px; }
+.advice-card { min-height: 0; display: grid; grid-template-columns: 42px 1fr; gap: 14px; align-items: start; padding: 16px 18px; border-radius: 24px; }
 .umbrella-card { background: #e7eef0; }
 .dress-card { background: #eee9df; }
 .advice-icon { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 15px; background: rgba(255,255,255,.6); }
@@ -91,7 +99,7 @@ a { color: inherit; }
 .advice-card h2 { margin: 0; font-size: 17px; line-height: 1.3; letter-spacing: -.02em; }
 .advice-card p:last-child { margin: 7px 0 0; color: #69736e; font-size: 12px; line-height: 1.55; }
 
-.personal-note { position: relative; overflow: hidden; display: grid; grid-template-columns: 46px 1fr; gap: 15px; align-items: center; margin-top: 12px; padding: 20px; border: 1px solid rgba(157, 126, 79, .13); border-radius: 26px; background: linear-gradient(135deg, #f2e8d6 0%, #ece6dc 58%, #e4ebe5 100%); box-shadow: 0 14px 38px rgba(92, 78, 57, .09); }
+.personal-note { position: relative; overflow: hidden; display: grid; grid-template-columns: 46px 1fr; gap: 14px; align-items: start; margin-top: 12px; padding: 18px; border: 1px solid rgba(157, 126, 79, .13); border-radius: 26px; background: linear-gradient(135deg, #f2e8d6 0%, #ece6dc 58%, #e4ebe5 100%); box-shadow: 0 14px 38px rgba(92, 78, 57, .09); }
 .personal-note::after { content: ""; position: absolute; right: -28px; top: -42px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,.24); pointer-events: none; }
 .personal-note-icon { position: relative; z-index: 1; width: 46px; height: 46px; display: grid; place-items: center; border-radius: 16px; background: rgba(255,255,255,.64); box-shadow: inset 0 0 0 1px rgba(90,71,45,.06); }
 .personal-note-icon svg { width: 25px; fill: none; stroke: #6f6657; stroke-width: 1.55; stroke-linecap: round; stroke-linejoin: round; }
@@ -116,20 +124,23 @@ a { color: inherit; }
 .hour-rain { margin-top: auto; color: var(--blue); font-size: 10px; font-weight: 700; }
 .hour.is-now .hour-rain { color: #dce9e6; }
 
-.metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 12px; }
-.metric { min-height: 126px; padding: 18px; border-radius: 25px; display: flex; flex-direction: column; }
+.metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+.metric { min-width: 0; padding: 13px 11px; border-radius: 20px; display: flex; flex-direction: column; }
 .metric span { color: var(--muted); font-size: 11px; }
-.metric strong { margin: auto 0 0; font-size: 28px; line-height: 1; letter-spacing: -.04em; }
-.metric small { margin-top: 8px; color: var(--muted); font-size: 10px; }
+.metric strong { margin: 8px 0 0; font-size: 21px; line-height: 1; letter-spacing: -.04em; }
+.metric small { margin-top: 5px; color: var(--muted); font-size: 9.5px; line-height: 1.3; }
 
 .week-list { display: grid; }
-.day-row { min-height: 61px; display: grid; grid-template-columns: 52px 32px 1fr 75px; align-items: center; gap: 9px; border-top: 1px solid var(--line); }
+.day-row { min-height: 54px; display: grid; grid-template-columns: 40px 28px 34px 30px 1fr 30px; align-items: center; gap: 8px; border-top: 1px solid var(--line); }
 .day-row:first-child { border-top: 0; }
 .day-name { font-size: 13px; font-weight: 680; }
 .day-icon { font-size: 20px; }
 .day-rain { color: var(--blue); font-size: 11px; font-weight: 650; }
-.day-temp { display: flex; justify-content: flex-end; gap: 13px; font-size: 13px; font-weight: 700; }
-.day-temp .low { color: var(--muted); font-weight: 560; }
+.day-row .low, .day-row .high { font-size: 13px; font-weight: 700; text-align: right; }
+.day-row .low { color: var(--muted); font-weight: 560; }
+.day-row .high { text-align: left; }
+.temp-track { position: relative; height: 5px; border-radius: 5px; background: rgba(54,71,62,.08); }
+.temp-track i { position: absolute; top: 0; bottom: 0; border-radius: 5px; background: linear-gradient(90deg, #8fb0bb, #d8bf87); }
 
 .air-card { padding-bottom: 20px; }
 .air-top { display: flex; align-items: center; justify-content: space-between; gap: 22px; }
@@ -174,7 +185,7 @@ a { color: inherit; }
 .quick-locations p { color: var(--muted); font-size: 10px; }
 .quick-locations div { display: flex; flex-wrap: wrap; gap: 7px; }
 .quick-locations button { padding: 8px 13px; border: 1px solid var(--line); border-radius: 999px; background: transparent; font-size: 11px; cursor: pointer; }
-.toast { position: fixed; z-index: 50; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom)); max-width: calc(100% - 36px); padding: 11px 16px; border-radius: 999px; background: rgba(40,50,46,.92); color: white; font-size: 11px; opacity: 0; transform: translate(-50%, 18px); pointer-events: none; transition: opacity .25s, transform .25s; }
+.toast { position: fixed; z-index: 50; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom)); max-width: calc(100% - 36px); width: max-content; padding: 11px 16px; border-radius: 999px; background: rgba(40,50,46,.92); color: white; font-size: 11px; opacity: 0; transform: translate(-50%, 18px); pointer-events: none; transition: opacity .25s, transform .25s; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 .loading-line { width: 100%; height: 84px; border-radius: 18px; background: linear-gradient(100deg, rgba(225,230,225,.55) 30%, rgba(255,255,255,.7) 45%, rgba(225,230,225,.55) 60%); background-size: 260% 100%; animation: shimmer 1.3s linear infinite; }
 @keyframes shimmer { to { background-position-x: -160%; } }
@@ -185,8 +196,8 @@ a { color: inherit; }
   .hero-card { padding: 42px; min-height: 320px; }
   .weather-art { right: 58px; top: 58px; transform: scale(1.04); }
   .section-card, .air-card { padding: 28px; }
-  .metrics-grid { grid-template-columns: repeat(4, 1fr); }
-  .metric { min-height: 142px; }
+  .metric { padding: 18px; }
+  .metric strong { font-size: 26px; }
   .search-dialog { margin: auto; }
 }
 
@@ -198,6 +209,44 @@ a { color: inherit; }
   .advice-card { padding: 17px; grid-template-columns: 38px 1fr; }
   .advice-icon { width: 38px; height: 38px; }
 }
+
+/* 晚上（当地日落后）自动换成暗色，宿舍里看不刺眼 */
+:root[data-theme="night"] {
+  color-scheme: dark;
+  --paper: #171d1a; --card: rgba(36, 44, 40, .82); --ink: #e6ebe7; --muted: #95a19a;
+  --line: rgba(220, 235, 226, .1); --sage-deep: #6f8a7b; --shadow: 0 18px 60px rgba(0, 0, 0, .25);
+}
+:root[data-theme="night"] body { background: linear-gradient(155deg, #1b2320 0%, #171d1a 45%, #141a1d 100%); }
+:root[data-theme="night"] .ambient { opacity: .12; }
+:root[data-theme="night"] .card { border-color: rgba(255,255,255,.05); }
+:root[data-theme="night"] .hero-card { background: linear-gradient(145deg, #24302b, #1c2622); }
+:root[data-theme="night"] .hero-card::after { background: rgba(255,255,255,.03); }
+:root[data-theme="night"] .hero-copy #greeting { color: #b7cbbf; }
+:root[data-theme="night"] .condition .dot { color: #5d6a63; }
+:root[data-theme="night"] .umbrella-card { background: #1f2a2e; }
+:root[data-theme="night"] .dress-card { background: #2a2722; }
+:root[data-theme="night"] .partner-card { background: #27232c; }
+:root[data-theme="night"] .advice-icon, :root[data-theme="night"] .personal-note-icon { background: rgba(255,255,255,.07); }
+:root[data-theme="night"] .advice-card p:last-child, :root[data-theme="night"] .partner-compare { color: var(--muted); }
+:root[data-theme="night"] .personal-note { border-color: rgba(216,191,135,.12); background: linear-gradient(135deg, #2e2a22 0%, #27271f 58%, #212a25 100%); box-shadow: none; }
+:root[data-theme="night"] .personal-note::after { background: rgba(255,255,255,.03); }
+:root[data-theme="night"] .personal-note-label { color: #c2a982; }
+:root[data-theme="night"] .personal-note #gentleNote { color: #efe9dd; }
+:root[data-theme="night"] .personal-note-icon svg { stroke: #d6c7ad; }
+:root[data-theme="night"] .reminder-chip { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.08); color: #d4cbbb; }
+:root[data-theme="night"] .together { background: rgba(255,255,255,.07); color: #d9b9a3; }
+:root[data-theme="night"] .hour, :root[data-theme="night"] .air-details > div { background: rgba(255,255,255,.05); }
+:root[data-theme="night"] .hour.is-now { background: #4c6457; }
+:root[data-theme="night"] .temp-track { background: rgba(255,255,255,.08); }
+:root[data-theme="night"] .quiet-button, :root[data-theme="night"] .icon-button { background: rgba(255,255,255,.07); }
+:root[data-theme="night"] .search-dialog { background: #1f2622; }
+:root[data-theme="night"] .search-box { background: #29312d; }
+:root[data-theme="night"] .locate-action, :root[data-theme="night"] .result-button { background: #29332e; }
+:root[data-theme="night"] .aqi-orb { background: #2f3a33; box-shadow: inset 0 0 0 7px rgba(255,255,255,.04); }
+:root[data-theme="night"] .aqi-orb[data-level="moderate"] { background: #4a4430; }
+:root[data-theme="night"] .aqi-orb[data-level="sensitive"] { background: #4d3d2e; }
+:root[data-theme="night"] .aqi-orb[data-level="unhealthy"] { background: #4f3331; }
+:root[data-theme="night"] .weather-art .cloud { background: #3a4540; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
