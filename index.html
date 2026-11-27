@@ -12,7 +12,7 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" type="image/svg+xml" href="./assets/icons/icon.svg">
   <link rel="apple-touch-icon" href="./assets/icons/icon-192.png">
-  <link rel="stylesheet" href="./styles.css?v=11">
+  <link rel="stylesheet" href="./styles.css?v=12">
 </head>
 <body>
   <a class="skip-link" href="#main">跳到天气内容</a>
@@ -57,11 +57,11 @@
     <section class="advice-grid" aria-label="今日建议">
       <article class="advice-card umbrella-card">
         <div class="advice-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M5 16a11 11 0 0 1 22 0H5Z"/><path d="M16 5v20a3 3 0 0 0 6 0"/></svg></div>
-        <div><p class="advice-label">出门提醒</p><h2 id="umbrellaTitle">正在判断要不要带伞</h2><p id="umbrellaDetail">会看未来 12 小时和短时降水</p></div>
+        <div><p class="advice-label" id="umbrellaLabel">出门提醒</p><h2 id="umbrellaTitle">正在判断要不要带伞</h2><p id="umbrellaDetail">会看未来 12 小时和短时降水</p></div>
       </article>
       <article class="advice-card dress-card">
         <div class="advice-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M12 6 7 9l-3 7 5 2v9h14v-9l5-2-3-7-5-3a4.5 4.5 0 0 1-8 0Z"/></svg></div>
-        <div><p class="advice-label">穿衣建议</p><h2 id="dressTitle">正在准备今天的穿搭</h2><p id="dressDetail">会综合体感、风、湿度和温差</p></div>
+        <div><p class="advice-label" id="dressLabel">穿衣建议</p><h2 id="dressTitle">正在准备今天的穿搭</h2><p id="dressDetail">会综合体感、风、湿度和温差</p></div>
       </article>
     </section>
 
@@ -141,6 +141,6 @@
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="./app.js?v=11" defer></script>
+  <script src="./app.js?v=12" defer></script>
 </body>
 </html>

@@ -192,12 +192,28 @@ function renderWeek(daily) {
   });
 }
 
+// 晚上 20 点后（以及凌晨 5 点前），建议改看白天 7–19 点：她要的是“明天出门怎么办”
+function daytimePlan(data) {
+  const hour = Number(timePart(data.current.time).split(":")[0]);
+  if (!Number.isFinite(hour) || (hour >= 5 && hour < 20)) return null;
+  const today = data.current.time.slice(0, 10);
+  const targetDate = hour >= 20 ? data.daily.time[1] : today;
+  const dayIndex = data.daily.time.indexOf(targetDate);
+  const start = data.hourly.time.indexOf(`${targetDate}T07:00`);
+  if (!targetDate || dayIndex < 0 || start < 0) return null;
+  const label = hour >= 20 ? "明天" : "今天";
+  return { hours: sliceHourly(data.hourly, start, 13), dayIndex, label };
+}
+
 function renderAdvice(data, hours) {
-  const umbrella = buildUmbrellaAdvice(data, hours);
+  const plan = daytimePlan(data);
+  setText("umbrellaLabel", plan ? `${plan.label}出门` : "出门提醒");
+  setText("dressLabel", plan ? `${plan.label}穿衣` : "穿衣建议");
+  const umbrella = plan ? buildDaytimeUmbrellaAdvice(data, plan) : buildUmbrellaAdvice(data, hours);
   setText("umbrellaTitle", umbrella.title);
   setText("umbrellaDetail", umbrella.detail);
 
-  const dress = buildDressAdvice(data, hours);
+  const dress = buildDressAdvice(data, hours, plan);
   setText("dressTitle", dress.title);
   setText("dressDetail", dress.detail);
   setText("gentleNote", dress.gentle);
@@ -238,19 +254,48 @@ function buildUmbrellaAdvice(data, hours) {
   return { title: "今天大概率不用带伞", detail: maxChance ? `未来 12 小时降雨概率最高 ${Math.round(maxChance)}%` : "暂时没有明显降水信号" };
 }
 
+function buildDaytimeUmbrellaAdvice(data, plan) {
+  const { hours, label } = plan;
+  const probabilities = hours.precipitation_probability.map((value) => safeNumber(value));
+  const precipitation = hours.precipitation.map((value) => safeNumber(value));
+  const maxChance = Math.max(...probabilities, 0);
+  const totalRain = precipitation.reduce((sum, value) => sum + value, 0);
+  const firstLikelyHour = probabilities.findIndex((value, index) => value >= 50 || precipitation[index] >= .2);
+  const rainingNow = safeNumber(data.current.precipitation) >= .1;
+  if (maxChance >= 60 || totalRain >= 1) {
+    const when = firstLikelyHour >= 0 ? `${label} ${timePart(hours.time[firstLikelyHour])} 前后` : `${label}白天`;
+    return { title: `${label}记得带伞`, detail: `${when}可能下雨，最高概率 ${Math.round(maxChance)}%` };
+  }
+  if (maxChance >= 35 || totalRain >= .2) {
+    return { title: `${label}带把小伞更安心`, detail: `${label} 7–19 点最高降雨概率 ${Math.round(maxChance)}%` };
+  }
+  return {
+    title: `${label}白天大概率不用带伞`,
+    detail: rainingNow ? "不过现在外面在下雨，这会儿出门记得撑伞" : `${label} 7–19 点降雨概率最高 ${Math.round(maxChance)}%`
+  };
+}
+
 function pickBySeed(items, seedSource = "") {
   const seed = String(seedSource).split("").reduce((total, character) => total + character.charCodeAt(0), 0);
   return items[seed % items.length];
 }
 
-function buildDressAdvice(data, hours) {
-  const feels = safeNumber(data.current.apparent_temperature);
-  const maxWind = Math.max(...hours.wind_speed_10m.map((value) => safeNumber(value)), 0);
-  const maxRain = Math.max(...hours.precipitation_probability.map((value) => safeNumber(value)), 0);
-  const humidity = safeNumber(data.current.relative_humidity_2m);
-  const uv = safeNumber(data.daily.uv_index_max[0]);
-  const dayRange = safeNumber(data.daily.temperature_2m_max[0]) - safeNumber(data.daily.temperature_2m_min[0]);
+function average(values) {
+  const numbers = values.map(Number).filter(Number.isFinite);
+  return numbers.length ? numbers.reduce((sum, value) => sum + value, 0) / numbers.length : 0;
+}
+
+function buildDressAdvice(data, hours, plan = null) {
+  const span = plan ? plan.hours : hours;
+  const dayIndex = plan ? plan.dayIndex : 0;
+  const feels = plan ? average(span.apparent_temperature) : safeNumber(data.current.apparent_temperature);
+  const maxWind = Math.max(...span.wind_speed_10m.map((value) => safeNumber(value)), 0);
+  const maxRain = Math.max(...span.precipitation_probability.map((value) => safeNumber(value)), 0);
+  const humidity = plan ? average(span.relative_humidity_2m) : safeNumber(data.current.relative_humidity_2m);
+  const uv = safeNumber(data.daily.uv_index_max[dayIndex]);
+  const dayRange = safeNumber(data.daily.temperature_2m_max[dayIndex]) - safeNumber(data.daily.temperature_2m_min[dayIndex]);
   const currentRain = safeNumber(data.current.precipitation);
+  const ahead = plan ? plan.label : "";
   const careSeed = `${data.current.time}-${data.current.weather_code}`;
   let title;
   if (feels <= 0) title = "羽绒服和保暖内搭最稳妥";
@@ -271,8 +316,10 @@ function buildDressAdvice(data, hours) {
 
   const localHour = Number(timePart(data.current.time).split(":")[0]);
   const reminders = [];
-  if (currentRain >= .1 || maxRain >= 40) reminders.push("雨伞放进包里");
-  if (feels <= 12) reminders.push("外套别忘了");
+  if (plan && maxRain >= 40) reminders.push("睡前把伞放进包里");
+  else if (currentRain >= .1 || maxRain >= 40) reminders.push("雨伞放进包里");
+  if (plan && feels <= 12) reminders.push(`${ahead}穿暖一点`);
+  else if (feels <= 12) reminders.push("外套别忘了");
   else if (dayRange >= 8) reminders.push("早晚记得加衣");
   if (uv >= 5) reminders.push("出门认真防晒");
   if (feels >= 27 || (humidity >= 80 && feels >= 24)) reminders.push("记得多喝一点水");
@@ -289,7 +336,19 @@ function buildDressAdvice(data, hours) {
     reminders.push(everydayReminders[(reminderStart + index) % everydayReminders.length]);
   }
   let gentle;
-  if (currentRain >= .1) gentle = pickBySeed([
+  if (plan && currentRain < .1 && maxRain >= 40) gentle = pickBySeed([
+    `${PERSON_NAME}，${ahead}可能会下雨，睡前把伞放进包里，出门就不用慌。`,
+    `${PERSON_NAME}，${ahead}白天可能有雨，伞先准备好，鞋子挑双耐湿的。`
+  ], careSeed);
+  else if (plan && currentRain < .1 && feels <= 8) gentle = pickBySeed([
+    `${PERSON_NAME}，${ahead}挺冷的，厚衣服今晚先找出来放好。`,
+    `${PERSON_NAME}，${ahead}白天也冷，出门多穿一件，我会更放心。`
+  ], careSeed);
+  else if (plan && currentRain < .1 && feels >= 30) gentle = pickBySeed([
+    `${PERSON_NAME}，${ahead}会很热，水杯记得装满再出门。`
+  ], careSeed);
+  else if (plan && currentRain < .1) gentle = null;
+  else if (currentRain >= .1) gentle = pickBySeed([
     `${PERSON_NAME}，外面在下雨，伞拿好，别让自己淋湿了。`,
     `${PERSON_NAME}，正在下雨，走慢一点，鞋子湿了会不舒服。`,
     `${PERSON_NAME}，出门记得撑伞，路面滑就别走太快。`
@@ -341,6 +400,12 @@ function buildDressAdvice(data, hours) {
     `${PERSON_NAME}，慢慢来就好，今天也要舒舒服服的。`,
     `${PERSON_NAME}，不管天气怎样，都要把自己照顾好。`
   ], careSeed);
+  if (gentle === null) gentle = pickBySeed([
+    `${PERSON_NAME}，回宿舍路上慢一点，到了就早点休息。`,
+    `${PERSON_NAME}，已经不早了，回宿舍注意安全，别熬太晚。`,
+    `${PERSON_NAME}，今天辛苦了，回宿舍洗个热水澡，好好睡一觉。`
+  ], careSeed);
+  if (plan) details.unshift(`按${ahead}白天体感约 ${Math.round(feels)}° 来穿`);
   return { title, detail: details.slice(0, 2).join("；") + "。", gentle, reminders: [...new Set(reminders)].slice(0, 4) };
 }
 
