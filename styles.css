@@ -89,6 +89,15 @@ a { color: inherit; }
 .partner-main strong { font-size: 24px; letter-spacing: -.03em; }
 .partner-main span:last-child { color: var(--muted); font-size: 13px; font-weight: 620; }
 .partner-compare { margin: 0; color: #69736e; font-size: 12px; }
+.push-card { margin-top: 12px; padding: 18px; border-radius: 24px; background: #e9eee7; }
+.push-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.push-card h2 { margin: 0; font-size: 16px; letter-spacing: -.02em; }
+.push-card p:not(.advice-label) { margin: 5px 0 0; color: #69736e; font-size: 12px; line-height: 1.55; }
+.push-button { flex: 0 0 auto; color: white; background: var(--sage-deep); box-shadow: none; }
+.push-code { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.push-code p { margin: 0 0 8px !important; }
+.push-code textarea { width: 100%; padding: 10px 12px; border: 0; border-radius: 14px; background: rgba(255,255,255,.7); color: var(--ink); font: 10px/1.4 ui-monospace, monospace; resize: none; word-break: break-all; }
+.push-code .quiet-button { margin-top: 8px; }
 .advice-grid { display: grid; gap: 12px; margin-top: 12px; }
 .advice-card { min-height: 0; display: grid; grid-template-columns: 42px 1fr; gap: 14px; align-items: start; padding: 16px 18px; border-radius: 24px; }
 .umbrella-card { background: #e7eef0; }
@@ -226,6 +235,9 @@ a { color: inherit; }
 :root[data-theme="night"] .umbrella-card { background: #1f2a2e; }
 :root[data-theme="night"] .dress-card { background: #2a2722; }
 :root[data-theme="night"] .partner-card { background: #27232c; }
+:root[data-theme="night"] .push-card { background: #212a25; }
+:root[data-theme="night"] .push-card p:not(.advice-label) { color: var(--muted); }
+:root[data-theme="night"] .push-code textarea { background: rgba(255,255,255,.06); }
 :root[data-theme="night"] .advice-icon, :root[data-theme="night"] .personal-note-icon { background: rgba(255,255,255,.07); }
 :root[data-theme="night"] .advice-card p:last-child, :root[data-theme="night"] .partner-compare { color: var(--muted); }
 :root[data-theme="night"] .personal-note { border-color: rgba(216,191,135,.12); background: linear-gradient(135deg, #2e2a22 0%, #27271f 58%, #212a25 100%); box-shadow: none; }

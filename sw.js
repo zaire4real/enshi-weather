@@ -1,4 +1,4 @@
-const CACHE_VERSION = "just-right-weather-v16";
+const CACHE_VERSION = "just-right-weather-v17";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -49,4 +49,25 @@ self.addEventListener("fetch", (event) => {
       })
       .catch(() => caches.match(event.request).then((cached) => cached || caches.match("./index.html")))
   );
+});
+
+// 早上提醒：GitHub 每天检查天气，需要时推送到这里
+self.addEventListener("push", (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch (_) { data = { body: event.data && event.data.text() }; }
+  event.waitUntil(self.registration.showNotification(data.title || "湘伴日常", {
+    body: data.body || "出门前看一眼今天的天气吧。",
+    icon: "./assets/icons/icon-192.png",
+    badge: "./assets/icons/icon-192.png",
+    tag: "morning-weather",
+    data: { url: "./" }
+  }));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windows) => {
+    const open = windows.find((client) => "focus" in client);
+    return open ? open.focus() : self.clients.openWindow(event.notification.data?.url || "./");
+  }));
 });

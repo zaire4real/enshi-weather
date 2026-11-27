@@ -12,7 +12,7 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" type="image/svg+xml" href="./assets/icons/icon.svg">
   <link rel="apple-touch-icon" href="./assets/icons/icon-192.png">
-  <link rel="stylesheet" href="./styles.css?v=16">
+  <link rel="stylesheet" href="./styles.css?v=17">
 </head>
 <body>
   <a class="skip-link" href="#main">跳到天气内容</a>
@@ -120,10 +120,21 @@
       <p class="source-note">AQI 采用更严格的美国标准，数值通常比国内天气 App 高一些。数据来自 Open-Meteo 与 CAMS，仅供日常参考。</p>
     </section>
 
+    <section class="push-card" id="pushCard" aria-labelledby="pushTitle" hidden>
+      <div class="push-head">
+        <div><p class="advice-label">每天早上</p><h2 id="pushTitle">早上帮你看天气</h2><p id="pushText">下雨或降温的早上，7:30 左右发通知提醒你。</p></div>
+        <button class="quiet-button push-button" id="pushButton" type="button">开启提醒</button>
+      </div>
+      <div class="push-code" id="pushCodeBox" hidden>
+        <p>最后一步：把下面这段代码复制给他，他设好后就会开始提醒你。</p>
+        <textarea id="pushCode" rows="3" readonly aria-label="提醒代码"></textarea>
+        <button class="quiet-button" id="copyPushCode" type="button">复制代码</button>
+      </div>
+    </section>
   </main>
 
   <footer class="footer shell">
-    <p>天气来自 <a href="https://open-meteo.com/" target="_blank" rel="noreferrer">Open-Meteo</a> · 地点搜索 © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a></p>
+    <p>天气与地点来自 <a href="https://open-meteo.com/" target="_blank" rel="noreferrer">Open-Meteo</a>（GeoNames） · 地点搜索 © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a></p>
     <p>湘伴日常 · 天气只是参考，照顾好自己才最重要。</p>
   </footer>
 
@@ -148,6 +159,6 @@
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="./app.js?v=16" defer></script>
+  <script src="./app.js?v=17" defer></script>
 </body>
 </html>

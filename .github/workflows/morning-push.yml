@@ -1,0 +1,30 @@
+name: 早上提醒
+
+on:
+  schedule:
+    - cron: "30 23 * * *"   # 北京时间 7:30（GitHub 排程可能晚几分钟到半小时）
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "不管天气，发一条测试提醒"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install --quiet "pywebpush==2.*"
+      - name: 看天气并提醒
+        env:
+          PUSH_SUBSCRIPTION: ${{ secrets.PUSH_SUBSCRIPTION }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          FORCE: ${{ github.event.inputs.force == 'true' }}
+        run: python scripts/morning_push.py

@@ -13,6 +13,9 @@ const CONFIG = {
 };
 // 指定日期的留言写在 messages.json，不用改这里
 
+// 早上提醒（Web Push）用的公钥；对应的私钥只存在 GitHub 的 Secrets 里
+const PUSH_PUBLIC_KEY = "BL6eRw4QpPmKGPBfWWetZHSfDUlIWXxwyT75d8fpKxJ2xLdmuQZz5sT4il9PPl93IU3JlZWokJF_9tzHt4NLRwE";
+
 const DEFAULT_LOCATION = {
   latitude: 30.3,
   longitude: 109.48333,
@@ -574,45 +577,68 @@ async function reverseGeocode(location) {
   return { ...location, name, admin1: admin1 === name ? "" : admin1, country, detail: detail || location.detail };
 }
 
+// 城市搜索：Open-Meteo（国内连得上，先显示）+ OpenStreetMap（覆盖更全，到了再补上）
+async function searchOpenMeteo(query) {
+  const variants = [query];
+  if (!/[市县區区]$/.test(query) && /[\u4e00-\u9fff]/.test(query)) variants.push(`${query}市`);
+  const lists = await Promise.allSettled(variants.map((name) => fetchJson(`https://geocoding-api.open-meteo.com/v1/search?${new URLSearchParams({ name, count: "8", language: "zh", format: "json" })}`, 7000)));
+  return lists.flatMap((item) => item.status === "fulfilled" ? item.value.results || [] : [])
+    .sort((a, b) => safeNumber(b.population) - safeNumber(a.population))
+    .map((r) => ({ name: cleanPlaceName(r.name), admin: cleanPlaceName((r.admin1 || "").split(" or ")[0]), county: cleanPlaceName(r.admin2 || ""), country: cleanPlaceName(r.country || ""), latitude: r.latitude, longitude: r.longitude }));
+}
+
+async function searchNominatim(query) {
+  const params = new URLSearchParams({ q: query, format: "jsonv2", addressdetails: "1", namedetails: "1", limit: "8", "accept-language": "zh-CN" });
+  const data = await fetchJson(`https://nominatim.openstreetmap.org/search?${params}`, 8000);
+  return (Array.isArray(data) ? data : []).map((r) => {
+    const address = r.address || {};
+    return { name: cleanPlaceName(r.namedetails?.["name:zh-Hans"] || r.namedetails?.["name:zh"] || r.name || r.display_name?.split(",")[0] || "未命名地点"), admin: cleanPlaceName(address.state || address.province || address.region || ""), county: cleanPlaceName(address.county || address.state_district || ""), country: cleanPlaceName(address.country || ""), latitude: Number(r.lat), longitude: Number(r.lon) };
+  });
+}
+
 async function searchCities(query) {
   const normalized = query.trim();
+  const token = (state.searchToken = (state.searchToken || 0) + 1);
   if (normalized.length < 2) {
     setText("searchStatus", "输入至少两个字开始搜索");
     $("#searchResults").replaceChildren();
     return;
   }
   setText("searchStatus", "正在搜索…");
-  const params = new URLSearchParams({ q: normalized, format: "jsonv2", addressdetails: "1", namedetails: "1", limit: "10", "accept-language": "zh-CN" });
-  try {
-    const data = await fetchJson(`https://nominatim.openstreetmap.org/search?${params}`, 9000);
-    renderSearchResults(Array.isArray(data) ? data : []);
-  } catch (error) {
-    setText("searchStatus", "搜索没有成功，请稍后再试");
-    $("#searchResults").replaceChildren();
-  }
+  let results = [];
+  const merge = (more) => {
+    if (token !== state.searchToken) return;
+    for (const place of more) {
+      const duplicate = results.some((r) => Math.abs(r.latitude - place.latitude) < .15 && Math.abs(r.longitude - place.longitude) < .15);
+      if (!duplicate && Number.isFinite(place.latitude) && Number.isFinite(place.longitude)) results.push(place);
+    }
+    renderSearchResults(results.slice(0, 10), true);
+  };
+  const fast = searchOpenMeteo(normalized).then(merge).catch(() => {});
+  const wide = searchNominatim(normalized).then(merge).catch(() => {});
+  await Promise.allSettled([fast, wide]);
+  if (token === state.searchToken) renderSearchResults(results.slice(0, 10), false);
 }
 
-function renderSearchResults(results) {
+function renderSearchResults(results, pending = false) {
   const container = $("#searchResults");
   container.replaceChildren();
-  setText("searchStatus", results.length ? `找到 ${results.length} 个位置` : "没有找到，试试输入完整的城市或区县名");
-  results.forEach((result) => {
+  setText("searchStatus", results.length ? `找到 ${results.length} 个位置${pending ? "，还在找…" : ""}` : pending ? "正在搜索…" : "没有找到，试试输入完整的城市或区县名");
+  results.forEach((place) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "result-button";
     const text = document.createElement("span");
     const title = document.createElement("strong");
-    const resultName = cleanPlaceName(result.namedetails?.["name:zh-Hans"] || result.namedetails?.["name:zh"] || result.name || result.display_name?.split(",")[0] || "未命名地点");
-    title.textContent = resultName;
+    title.textContent = place.name;
     const detail = document.createElement("small");
-    const address = result.address || {};
-    detail.textContent = [address.country, address.state || address.province || address.region, address.county || address.state_district].filter(Boolean).map(cleanPlaceName).filter((item, index, all) => all.indexOf(item) === index).join(" · ");
+    detail.textContent = [place.country, place.admin, place.county].filter(Boolean).filter((item, index, all) => item !== place.name && all.indexOf(item) === index).join(" · ");
     const arrow = document.createElement("small");
     arrow.textContent = "›";
     text.append(title, detail);
     button.append(text, arrow);
     button.addEventListener("click", () => {
-      const location = { latitude: Number(result.lat), longitude: Number(result.lon), name: resultName, admin1: address.state || address.province || address.region || "", country: address.country || "", detail: detail.textContent || "全球位置", source: "search" };
+      const location = { latitude: Number(place.latitude), longitude: Number(place.longitude), name: place.name, admin1: place.admin, country: place.country, detail: detail.textContent || "全球位置", source: "search" };
       $("#searchDialog").close();
       loadWeather(location);
     });
@@ -683,6 +709,8 @@ function bindEvents() {
     state.deferredInstall = event;
     $("#installButton").hidden = false;
   });
+  $("#pushButton").addEventListener("click", enablePush);
+  $("#copyPushCode").addEventListener("click", copyPushCode);
   $("#installButton").addEventListener("click", async () => {
     if (!state.deferredInstall) return;
     state.deferredInstall.prompt();
@@ -694,12 +722,92 @@ function bindEvents() {
   window.addEventListener("online", () => loadWeather(state.location, { silent: true }));
 }
 
+// ===== 早上提醒 =====
+const PUSH_CODE_KEY = "xiangban-push-code";
+const isStandalone = () => window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+function base64UrlToBytes(value) {
+  const base64 = (value + "=".repeat((4 - value.length % 4) % 4)).replace(/-/g, "+").replace(/_/g, "/");
+  return Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
+}
+
+function bytesToBase64Url(text) {
+  const bytes = new TextEncoder().encode(text);
+  let binary = "";
+  bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function renderPushCard() {
+  const card = $("#pushCard");
+  const supported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  const savedCode = localStorage.getItem(PUSH_CODE_KEY);
+  card.hidden = false;
+  $("#pushCodeBox").hidden = true;
+  if (savedCode && supported && Notification.permission === "granted") {
+    setText("pushTitle", "早上提醒已开启");
+    setText("pushText", "下雨或降温的早上，会在 7:30 左右提醒你。");
+    setText("pushButton", "再复制一次代码");
+  } else if (!supported && isIOS() && !isStandalone()) {
+    setText("pushTitle", "想要早上提醒？");
+    setText("pushText", "先点 Safari 的「分享」→「添加到主屏幕」，再从桌面打开湘伴日常，就能开启提醒。");
+    $("#pushButton").hidden = true;
+    return;
+  } else if (!supported) {
+    card.hidden = true;
+    return;
+  } else if (Notification.permission === "denied") {
+    setText("pushTitle", "通知被关掉了");
+    setText("pushText", "到「设置」→「通知」→ 湘伴日常，打开「允许通知」后再回来。");
+    $("#pushButton").hidden = true;
+    return;
+  } else {
+    setText("pushTitle", "早上帮你看天气");
+    setText("pushText", "下雨或降温的早上，7:30 左右发通知提醒你；天气好就不打扰。");
+    setText("pushButton", "开启提醒");
+  }
+  $("#pushButton").hidden = false;
+}
+
+async function enablePush() {
+  const saved = localStorage.getItem(PUSH_CODE_KEY);
+  if (saved && Notification.permission === "granted") { showPushCode(saved); return; }
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") { showToast("没有开启通知，之后想开可以再点一次"); renderPushCard(); return; }
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription()
+      || await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64UrlToBytes(PUSH_PUBLIC_KEY) });
+    const place = state.location;
+    const code = bytesToBase64Url(JSON.stringify({ s: subscription.toJSON(), lat: Number(safeNumber(place.latitude).toFixed(2)), lon: Number(safeNumber(place.longitude).toFixed(2)) }));
+    localStorage.setItem(PUSH_CODE_KEY, code);
+    renderPushCard();
+    showPushCode(code);
+  } catch (error) {
+    showToast("开启没有成功，请稍后再试一次");
+  }
+}
+
+function showPushCode(code) {
+  $("#pushCodeBox").hidden = false;
+  $("#pushCode").value = code;
+}
+
+async function copyPushCode() {
+  const code = $("#pushCode").value;
+  try { await navigator.clipboard.writeText(code); }
+  catch (_) { $("#pushCode").select(); document.execCommand("copy"); }
+  showToast("已复制，发给他就好");
+}
+
 async function init() {
   bindEvents();
   renderLocation(DEFAULT_LOCATION);
   const saved = savedLocation();
   const initial = saved || DEFAULT_LOCATION;
   await loadMessages();
+  renderPushCard();
   await loadWeather(initial);
   useGeolocation();
   setInterval(() => loadWeather(state.location, { silent: true }), 15 * 60 * 1000);
