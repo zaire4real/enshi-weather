@@ -25,6 +25,7 @@ jobs:
       - name: 看天气并提醒
         env:
           PUSH_SUBSCRIPTION: ${{ secrets.PUSH_SUBSCRIPTION }}
+          PUSH_SUBSCRIPTION_PARTNER: ${{ secrets.PUSH_SUBSCRIPTION_PARTNER }}
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
           FORCE: ${{ github.event.inputs.force == 'true' }}
         run: python scripts/morning_push.py
