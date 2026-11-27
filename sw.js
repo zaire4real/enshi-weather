@@ -1,4 +1,4 @@
-const CACHE_VERSION = "just-right-weather-v15";
+const CACHE_VERSION = "just-right-weather-v16";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -6,6 +6,7 @@ const APP_SHELL = [
   "./app.js",
   "./manifest.webmanifest",
   "./messages.json",
+  "./partner.json",
   "./assets/icons/icon.svg",
   "./assets/icons/icon-192.png",
   "./assets/icons/icon-512.png"

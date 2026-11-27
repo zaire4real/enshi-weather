@@ -478,7 +478,9 @@ function specialMessage(localTime = "") {
 
 async function loadPartner() {
   const card = $("#partnerCard");
-  const partner = CONFIG.partner;
+  // partner.json 由 iPhone 捷径自动更新；读不到时才用 CONFIG.partner
+  const remote = await fetchJson("./partner.json", 6000).catch(() => null);
+  const partner = remote ? (remote.hidden ? null : remote) : CONFIG.partner;
   if (!partner || !Number.isFinite(Number(partner.latitude)) || !Number.isFinite(Number(partner.longitude))) { card.hidden = true; return; }
   const params = new URLSearchParams({ latitude: partner.latitude, longitude: partner.longitude, current: "temperature_2m,weather_code,is_day", timezone: "auto" });
   try {
